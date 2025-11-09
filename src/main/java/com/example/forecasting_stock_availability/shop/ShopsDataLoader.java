@@ -14,9 +14,10 @@ import java.util.List;
 @Component
 public class ShopsDataLoader implements ShopsDataLoaderInterface {
 
+    public List<InventoryRecord> inventoryRecords = null;
 
     private List<InventoryRecord> inventoryRecordMapper(List<String> list) {
-        List<InventoryRecord> inventoryRecords = new ArrayList<>();
+        List<InventoryRecord> inventory = new ArrayList<>();
 
         //Skipping the first one
         for (int i = 1; i < list.size(); i++) {
@@ -30,22 +31,31 @@ public class ShopsDataLoader implements ShopsDataLoaderInterface {
             record.setCurrentLevel(Long.parseLong(tokens[5]));
             record.setSoldItems(Long.parseLong(tokens[6]));
 
-            inventoryRecords.add(record);
+            inventory.add(record);
         }
 
-        return inventoryRecords;
+        return inventory;
     }
 
     @Override
     public List<InventoryRecord> loadData() {
-        List<String> list = null;
+        //FIXME caching does not work :(
+        System.out.println("LOADING");
+        if (inventoryRecords == null){
+            System.out.println("ACTUALLY LOADING");
 
-        try {
-            list = Files.readAllLines(Path.of("./data/retail_store_inventory.csv"), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            e.getStackTrace();
+            List<String> list = null;
+
+            try {
+                list = Files.readAllLines(Path.of("./data/retail_store_inventory.csv"), StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                e.getStackTrace();
+            }
+
+            return inventoryRecordMapper(list);
         }
+        System.out.println("RETURNING CASHED");
 
-        return inventoryRecordMapper(list);
+        return inventoryRecords;
     }
 }
