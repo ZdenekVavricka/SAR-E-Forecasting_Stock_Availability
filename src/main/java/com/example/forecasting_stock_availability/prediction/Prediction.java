@@ -14,7 +14,7 @@ public class Prediction {
     public static String predictDate(@PathVariable String date, @PathVariable String shop, @PathVariable String item) {
         //validate inputs
 
-        
+
         //TODO
         return "TODO = " + date + " " + shop + " " + item;
     }
