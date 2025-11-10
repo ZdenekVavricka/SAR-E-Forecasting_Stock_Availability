@@ -42,4 +42,11 @@ public class ForecastingStockAvailabilityApplication extends SpringBootServletIn
     public String hello() {
         return shopsApi.loadData().toString();
     }
+
+
+    @GetMapping("/hello4")
+    public String hello4( ) {
+        return holidayApi.getWeek("2025-11-10").toString();
+    }
+
 }
