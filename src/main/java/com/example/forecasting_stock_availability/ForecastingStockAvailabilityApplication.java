@@ -21,16 +21,13 @@ public class ForecastingStockAvailabilityApplication extends SpringBootServletIn
     @Autowired
     private ShopsDataLoaderInterface shopsApi;
 
-
     public static void main(String[] args) {
         SpringApplication.run(ForecastingStockAvailabilityApplication.class, args);
     }
 
     @GetMapping("/hello")
     public String hello(@RequestParam(value = "name", defaultValue = "World") String name) {
-        //List<DateObject> a = getDate();
-        //return a.toString();
-        return "HAIIIIIIIIIIIIIII";
+        return "Hello " + name;
     }
 
     @GetMapping("/hello2")

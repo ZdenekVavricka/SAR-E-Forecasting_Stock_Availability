@@ -39,7 +39,6 @@ public class ShopsDataLoader implements ShopsDataLoaderInterface {
 
     @Override
     public List<InventoryRecord> loadData() {
-        //FIXME caching does not work :(
         System.out.println("LOADING");
         if (inventoryRecords == null){
             System.out.println("ACTUALLY LOADING");
@@ -52,7 +51,9 @@ public class ShopsDataLoader implements ShopsDataLoaderInterface {
                 e.getStackTrace();
             }
 
-            return inventoryRecordMapper(list);
+            inventoryRecords = inventoryRecordMapper(list);
+
+            return inventoryRecords;
         }
         System.out.println("RETURNING CASHED");
 
