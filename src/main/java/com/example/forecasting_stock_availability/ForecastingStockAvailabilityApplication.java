@@ -31,7 +31,7 @@ public class ForecastingStockAvailabilityApplication extends SpringBootServletIn
     }
 
     @GetMapping("/hello2")
-    public String hello2( ) {
+    public String hello2() {
         return holidayApi.getDay().toString();
     }
 
@@ -42,8 +42,16 @@ public class ForecastingStockAvailabilityApplication extends SpringBootServletIn
 
 
     @GetMapping("/hello4")
-    public String hello4( ) {
-        return holidayApi.getWeek("2025-11-10").toString();
+    public String hello4(@RequestParam(value = "date", defaultValue = "") String date, @RequestParam(value = "shopID", defaultValue = "") String shopID, @RequestParam(value = "itemID", defaultValue = "") String itemID) {
+        if (!date.isEmpty()) {
+            return shopsApi.getInventoryRecordsByDate(date).toString();
+        } else if (!shopID.isEmpty()) {
+            return shopsApi.getInventoryRecordsByShop(shopID).toString();
+        } else if (!itemID.isEmpty()) {
+            return shopsApi.getInventoryRecordsByItem(itemID).toString();
+        } else {
+            return "Nothing to show add param";
+        }
     }
 
 }

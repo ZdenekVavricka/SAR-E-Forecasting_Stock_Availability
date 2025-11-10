@@ -6,4 +6,9 @@ public interface ShopsDataLoaderInterface {
 
     List<InventoryRecord> loadData();
 
+    List<InventoryRecord> getInventoryRecordsByDate(String date);
+
+    List<InventoryRecord> getInventoryRecordsByShop(String shopID);
+
+    List<InventoryRecord> getInventoryRecordsByItem(String itemID);
 }

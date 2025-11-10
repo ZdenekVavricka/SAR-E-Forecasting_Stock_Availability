@@ -1,6 +1,7 @@
 package com.example.forecasting_stock_availability.shop;
 
 
+import lombok.NonNull;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -59,4 +60,56 @@ public class ShopsDataLoader implements ShopsDataLoaderInterface {
 
         return inventoryRecords;
     }
+
+    @Override
+    public List<InventoryRecord> getInventoryRecordsByDate(String date) {
+        if  (inventoryRecords == null){
+            loadData();
+        }
+
+        List<InventoryRecord> inventory = new ArrayList<>();
+
+        for (InventoryRecord record : inventoryRecords) {
+            if (record.getDate().equals(date)) {
+                inventory.add(record);
+            }
+        }
+
+        return inventory;
+    }
+
+    @Override
+    public List<InventoryRecord> getInventoryRecordsByShop(String shopID) {
+        if  (inventoryRecords == null){
+            loadData();
+        }
+
+        List<InventoryRecord> inventory = new ArrayList<>();
+
+        for (InventoryRecord record : inventoryRecords) {
+            if (record.getShopID().equals(shopID)) {
+                inventory.add(record);
+            }
+        }
+
+        return inventory;
+    }
+
+    @Override
+    public List<InventoryRecord> getInventoryRecordsByItem(String itemID) {
+        if  (inventoryRecords == null){
+            loadData();
+        }
+
+        List<InventoryRecord> inventory = new ArrayList<>();
+
+        for (InventoryRecord record : inventoryRecords) {
+            if (record.getItemID().equals(itemID)) {
+                inventory.add(record);
+            }
+        }
+
+        return inventory;
+    }
+
 }
