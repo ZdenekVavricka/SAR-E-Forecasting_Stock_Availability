@@ -9,5 +9,4 @@ class ForecastingStockAvailabilityApplicationTests {
     @Test
     void contextLoads() {
     }
-
 }
