@@ -1,12 +1,14 @@
 package com.example.forecasting_stock_availability;
 
 import com.example.forecasting_stock_availability.data_client.HolidayDataInterface;
+import com.example.forecasting_stock_availability.shop.SearchItemBean;
 import com.example.forecasting_stock_availability.shop.ShopsDataLoaderInterface;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -40,18 +42,16 @@ public class ForecastingStockAvailabilityApplication extends SpringBootServletIn
         return shopsApi.loadData().toString();
     }
 
+    @GetMapping({"/hello5",
+            "/hello5/{date}",
+            "/hello5/{date}/{shopID}",
+            "/hello5/{date}/{shopID}/{itemID}"})
+    public String hello5(@PathVariable(value = "date", required = false) String date,
+                         @PathVariable(value = "shopID",required = false) String shopID,
+                         @PathVariable(value = "itemID",required = false) String itemID) {
 
-    @GetMapping("/hello4")
-    public String hello4(@RequestParam(value = "date", defaultValue = "") String date, @RequestParam(value = "shopID", defaultValue = "") String shopID, @RequestParam(value = "itemID", defaultValue = "") String itemID) {
-        if (!date.isEmpty()) {
-            return shopsApi.getInventoryRecordsByDate(date).toString();
-        } else if (!shopID.isEmpty()) {
-            return shopsApi.getInventoryRecordsByShop(shopID).toString();
-        } else if (!itemID.isEmpty()) {
-            return shopsApi.getInventoryRecordsByItem(itemID).toString();
-        } else {
-            return "Nothing to show add param";
-        }
+        SearchItemBean searchItemBean = new SearchItemBean(date, shopID, itemID);
+           return shopsApi.getInventoryRecords(searchItemBean).toString();
     }
 
 }
