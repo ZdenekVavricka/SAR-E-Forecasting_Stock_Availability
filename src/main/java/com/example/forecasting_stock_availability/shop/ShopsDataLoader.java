@@ -1,7 +1,6 @@
 package com.example.forecasting_stock_availability.shop;
 
 
-import lombok.NonNull;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -10,6 +9,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 @Component
@@ -40,9 +41,8 @@ public class ShopsDataLoader implements ShopsDataLoaderInterface {
 
     @Override
     public List<InventoryRecord> loadData() {
-        System.out.println("LOADING");
-        if (inventoryRecords == null){
-            System.out.println("ACTUALLY LOADING");
+        if (inventoryRecords == null) {
+            System.out.println("LOADING");
 
             List<String> list = null;
 
@@ -56,60 +56,31 @@ public class ShopsDataLoader implements ShopsDataLoaderInterface {
 
             return inventoryRecords;
         }
-        System.out.println("RETURNING CASHED");
+
+        System.out.println("CASHED");
 
         return inventoryRecords;
     }
 
     @Override
-    public List<InventoryRecord> getInventoryRecordsByDate(String date) {
-        if  (inventoryRecords == null){
-            loadData();
-        }
+    public List<InventoryRecord> getInventoryRecords(SearchItemBean search) {
+        loadData();
 
         List<InventoryRecord> inventory = new ArrayList<>();
+        Stream<InventoryRecord> stream = inventoryRecords.stream();
 
-        for (InventoryRecord record : inventoryRecords) {
-            if (record.getDate().equals(date)) {
-                inventory.add(record);
-            }
+        if (search.getDate() != null) {
+            stream = stream.filter(item -> item.getDate().equals(search.getDate()));
         }
 
-        return inventory;
+        if (search.getShopID() != null) {
+            stream = stream.filter(item -> item.getShopID().equals(search.getShopID()));
+        }
+
+        if (search.getItemID() != null) {
+            stream = stream.filter(item -> item.getItemID().equals(search.getItemID()));
+        }
+
+        return stream.collect(Collectors.toList());
     }
-
-    @Override
-    public List<InventoryRecord> getInventoryRecordsByShop(String shopID) {
-        if  (inventoryRecords == null){
-            loadData();
-        }
-
-        List<InventoryRecord> inventory = new ArrayList<>();
-
-        for (InventoryRecord record : inventoryRecords) {
-            if (record.getShopID().equals(shopID)) {
-                inventory.add(record);
-            }
-        }
-
-        return inventory;
-    }
-
-    @Override
-    public List<InventoryRecord> getInventoryRecordsByItem(String itemID) {
-        if  (inventoryRecords == null){
-            loadData();
-        }
-
-        List<InventoryRecord> inventory = new ArrayList<>();
-
-        for (InventoryRecord record : inventoryRecords) {
-            if (record.getItemID().equals(itemID)) {
-                inventory.add(record);
-            }
-        }
-
-        return inventory;
-    }
-
 }
