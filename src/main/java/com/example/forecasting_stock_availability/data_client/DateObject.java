@@ -35,7 +35,7 @@ public class DateObject {
     @Setter @Getter
     private String holidayName;
 
-    public boolean getIsHoliday() {
+    public boolean getHoliday() {
         return isHoliday.equals("true");
     }
 

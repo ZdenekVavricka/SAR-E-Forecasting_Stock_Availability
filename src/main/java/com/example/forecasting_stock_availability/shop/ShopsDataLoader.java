@@ -83,4 +83,11 @@ public class ShopsDataLoader implements ShopsDataLoaderInterface {
 
         return stream.collect(Collectors.toList());
     }
+
+    @Override
+    public String getDateOfTheOldestItem() {
+        loadData();
+        return inventoryRecords.getFirst().getDate();
+    }
+
 }

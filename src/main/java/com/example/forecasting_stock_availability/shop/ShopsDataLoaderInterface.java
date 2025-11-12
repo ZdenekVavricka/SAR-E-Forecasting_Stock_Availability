@@ -7,4 +7,6 @@ public interface ShopsDataLoaderInterface {
     List<InventoryRecord> loadData();
 
     List<InventoryRecord> getInventoryRecords(SearchItemBean search);
+
+    String getDateOfTheOldestItem();
 }
