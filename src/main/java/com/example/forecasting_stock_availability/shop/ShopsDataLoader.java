@@ -30,8 +30,8 @@ public class ShopsDataLoader implements ShopsDataLoaderInterface {
             record.setItemID(tokens[2]);
             record.setName(tokens[3]);
             record.setUnitType("ks");
-            record.setCurrentLevel(Long.parseLong(tokens[5]));
-            record.setSoldItems(Long.parseLong(tokens[6]));
+            record.setCurrentLevel(Integer.parseInt(tokens[5]));
+            record.setSoldItems(Integer.parseInt(tokens[6]));
 
             inventory.add(record);
         }
@@ -89,5 +89,16 @@ public class ShopsDataLoader implements ShopsDataLoaderInterface {
         loadData();
         return inventoryRecords.getFirst().getDate();
     }
+
+    @Override
+    public int getCurrentDayItemStock(SearchItemBean search) {
+        //only use search.getItemID() and search.getShopID()
+        return 300;
+    }
+
+    public int getItemsRestockCount(SearchItemBean search){
+        return 80;
+    }
+
 
 }

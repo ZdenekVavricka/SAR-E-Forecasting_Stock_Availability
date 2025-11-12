@@ -15,4 +15,18 @@ public class SearchItemBean {
         this.shopID = shopID;
         this.itemID = itemID;
     }
+
+
+    public SearchItemBean(String shopID, String itemID){
+        this.shopID = shopID;
+        this.itemID = itemID;
+    }
+
+    public SearchItemBean(String shopID){
+        this.shopID = shopID;
+    }
+
+    public SearchItemBean(){
+    }
+
 }

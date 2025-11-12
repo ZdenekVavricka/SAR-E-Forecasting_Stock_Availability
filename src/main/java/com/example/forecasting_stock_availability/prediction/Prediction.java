@@ -39,12 +39,12 @@ public class Prediction {
         //TODO validate inputs?
 
 
-        List<InventoryRecord> inventoryRecords = shopsApi.getInventoryRecords(new SearchItemBean(null, shop, null));
+        List<InventoryRecord> inventoryRecords = shopsApi.getInventoryRecords(new SearchItemBean(shop));
         String oldestDataDateString = shopsApi.getDateOfTheOldestItem();
-        LocalDate dateLocalDate = LocalDate.parse(oldestDataDateString);
+        LocalDate oldestDataDate = LocalDate.parse(oldestDataDateString);
 
         LocalDate currentDate = Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneId.systemDefault()).toLocalDate();
-        long daysBetween = ChronoUnit.DAYS.between(dateLocalDate, currentDate);
+        long daysBetween = ChronoUnit.DAYS.between(oldestDataDate, currentDate);
 
         List<DateObject> allDates = holidayApi.getDateInterval(oldestDataDateString, (int) daysBetween);
         //vyfiltrovat dny, co maji holliday = true + den pred a den po
@@ -109,7 +109,9 @@ public class Prediction {
         LocalDate orderDate = LocalDate.parse(date);
 
 
-        long daysBetweenNowAndAskedPrediction = ChronoUnit.DAYS.between(dateLocalDate, orderDate);
+        long daysBetweenNowAndAskedPrediction = ChronoUnit.DAYS.between(currentDate, orderDate);
+
+
 
         if (daysBetweenNowAndAskedPrediction > 7) {
             return "Can't predict more than 7 days into the future!!!";
@@ -118,20 +120,38 @@ public class Prediction {
         List<DateObject> futurePossibleHolidays = holidayApi.getWeek(date);
         HashMap<String, Boolean> futureHolidays = getHolidays(futurePossibleHolidays);
 
-        for (int i = 0; i < daysBetweenNowAndAskedPrediction; i++) {
-            LocalDate dayAhead = ChronoUnit.DAYS.addTo(currentDate, i);
-    
-            if(futureHolidays.get(dayAhead.toString()) != null) {
+        int current = shopsApi.getCurrentDayItemStock(new SearchItemBean(shop, item));
 
+        for (int i = 0; i <= daysBetweenNowAndAskedPrediction; i++) {
+            LocalDate dayAhead = ChronoUnit.DAYS.addTo(currentDate, i);
+
+            if (futureHolidays.get(dayAhead.toString()) == null) {
+                current -= itemAverages.getOrDefault(item, 0);
+            } else {
+                current -= itemAveragesHolidays.getOrDefault(item, 0);
             }
+            System.out.println("i = " + i);
+            System.out.println("current pred restock = " + current);
+
+            //do not add restock on the last iteration
+            if (i==daysBetweenNowAndAskedPrediction){
+                break;
+            }
+            //pridat restock ke current
+            current += shopsApi.getItemsRestockCount(new SearchItemBean(ChronoUnit.DAYS.addTo(currentDate, i+1).toString(), shop, item));
+            System.out.println("current po restock = " + current);
+
+        }
+
+        if(current<0){
+            return "Predicted stock is below 0";
         }
 
 
         //TODO ask holliday api for future events
 
 
-        //TODO
-        return "date = " + date + ", item = " + item + ", shop =  " + shop + ", predicition = " + itemAverages.get(item) + ", prediction holiday" + itemAveragesHolidays.get(item);
+        return "date = " + date + ", item = " + item + ", shop =  " + shop + ", average = " + itemAverages.get(item) + ", average holiday = " + itemAveragesHolidays.get(item) + ", Prediction = " + current;
     }
 
     private static HashMap<String, Boolean> getHolidays(List<DateObject> allDates) {

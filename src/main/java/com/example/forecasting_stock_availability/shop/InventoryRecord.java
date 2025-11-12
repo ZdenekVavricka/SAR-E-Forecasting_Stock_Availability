@@ -19,11 +19,11 @@ public class InventoryRecord {
 
     private String unitType;
 
-    private Long currentLevel;
+    private int currentLevel;
 
-    private Long soldItems;
+    private int soldItems;
 
-    public Long getStartingStock(){
+    public int getStartingStock(){
         return currentLevel + soldItems;
     }
 }
