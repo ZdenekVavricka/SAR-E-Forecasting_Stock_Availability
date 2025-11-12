@@ -24,6 +24,6 @@ public class InventoryRecord {
     private Long soldItems;
 
     public Long getStartingStock(){
-        return currentLevel+soldItems;
+        return currentLevel + soldItems;
     }
 }

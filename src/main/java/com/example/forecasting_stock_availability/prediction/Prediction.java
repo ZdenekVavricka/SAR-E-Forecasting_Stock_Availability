@@ -24,6 +24,7 @@ public class Prediction {
 
     //běží program per obchod nebo má mít přehled o všech obchodech
     //chceme brát všechny data co jsou k dispozici, nebo jen třeba tři roky zpět a na základě nich predikovat
+    // existují záznamy o položklách o svátkách
 
 
     @Autowired
@@ -39,10 +40,6 @@ public class Prediction {
 
 
         List<InventoryRecord> inventoryRecords = shopsApi.getInventoryRecords(new SearchItemBean(null, shop, null));
-
-        //TODO zeptat se api na svatky asi cely rook
-        //TODO zjistit si prvni den kdy jsou data od nejakeho obchodu a od toho data vzit do soucasnosti vsechny svatky
-
         String oldestDataDateString = shopsApi.getDateOfTheOldestItem();
         LocalDate dateLocalDate = LocalDate.parse(oldestDataDateString);
 
@@ -52,7 +49,92 @@ public class Prediction {
         List<DateObject> allDates = holidayApi.getDateInterval(oldestDataDateString, (int) daysBetween);
         //vyfiltrovat dny, co maji holliday = true + den pred a den po
 
+        HashMap<String, Boolean> daysWeDontWantToUse = getHolidays(allDates);
 
+        //init lists for days
+        List<HashMap<String, List<InventoryRecord>>> sameItemsInDayOfWeek = new ArrayList<>();
+
+        HashMap<String, Integer> itemAverages = new HashMap<>();
+        HashMap<String, Integer> itemAveragesHolidays = new HashMap<>();
+
+
+        for (int i = 0; i < 7; i++) {
+            sameItemsInDayOfWeek.add(new HashMap<>());
+        }
+
+        //FIXME nedělat to pro všechny položky, ale pouze pro parametry z hlavičky metody
+
+        // sorts items into 7 boxes (days) by their ID (hashmap)
+        for (InventoryRecord inventoryRecord : inventoryRecords) {
+            LocalDate itemDate = LocalDate.parse(inventoryRecord.getDate());
+            int itemDayValue = itemDate.getDayOfWeek().getValue();
+            HashMap<String, List<InventoryRecord>> hashMap = sameItemsInDayOfWeek.get(itemDayValue - 1); //list for specific day of the week
+            List<InventoryRecord> list = hashMap.getOrDefault(inventoryRecord.getItemID(), new ArrayList<>());
+            list.add(inventoryRecord);
+            hashMap.put(inventoryRecord.getItemID(), list);
+        }
+
+        for (HashMap<String, List<InventoryRecord>> hashMap : sameItemsInDayOfWeek) { //per day
+            // get all the items with the same ID
+
+            hashMap.forEach((id, allItemsWithSameID) -> {
+                int stockSold = 0;
+                int stockSoldHoliday = 0;
+                int countNormal = 0;
+                int countHoliday = 0;
+                for (InventoryRecord inventoryRecord : allItemsWithSameID) {
+                    if (daysWeDontWantToUse.get(inventoryRecord.getDate()) == null) {
+                        stockSold += inventoryRecord.getSoldItems();
+                        countNormal++;
+                    } else {
+                        stockSoldHoliday += inventoryRecord.getSoldItems();
+                        countHoliday++;
+                    }
+                }
+                int average = (int) (stockSold / (double) countNormal); //FIXME could crash /0
+                int averageHoliday = (int) (stockSoldHoliday / (double) countHoliday); //FIXME could crash /0
+                itemAverages.put(id, average);
+                itemAveragesHolidays.put(id, averageHoliday);
+            });
+        }
+
+
+        //pokud je den predikce dále nž 7 dní, tak kšá
+        //jinak získáme počet dní v budoucu
+        //pro každý den udělat predikci a na základě této predikce udělat další predikci
+        //Si = Si-1 − Di + Ri
+
+
+        //what day is date
+        LocalDate orderDate = LocalDate.parse(date);
+
+
+        long daysBetweenNowAndAskedPrediction = ChronoUnit.DAYS.between(dateLocalDate, orderDate);
+
+        if (daysBetweenNowAndAskedPrediction > 7) {
+            return "Can't predict more than 7 days into the future!!!";
+        }
+
+        List<DateObject> futurePossibleHolidays = holidayApi.getWeek(date);
+        HashMap<String, Boolean> futureHolidays = getHolidays(futurePossibleHolidays);
+
+        for (int i = 0; i < daysBetweenNowAndAskedPrediction; i++) {
+            LocalDate dayAhead = ChronoUnit.DAYS.addTo(currentDate, i);
+    
+            if(futureHolidays.get(dayAhead.toString()) != null) {
+
+            }
+        }
+
+
+        //TODO ask holliday api for future events
+
+
+        //TODO
+        return "date = " + date + ", item = " + item + ", shop =  " + shop + ", predicition = " + itemAverages.get(item) + ", prediction holiday" + itemAveragesHolidays.get(item);
+    }
+
+    private static HashMap<String, Boolean> getHolidays(List<DateObject> allDates) {
         HashMap<String, Boolean> daysWeDontWantToUse = new HashMap<>();
         for (int i = 0; i < allDates.size(); i++) {
             DateObject dateObject = allDates.get(i);
@@ -66,47 +148,7 @@ public class Prediction {
                 daysWeDontWantToUse.put(dateObject.getDate(), true);
             }
         }
-
-
-        //init lists for days
-        List<List<InventoryRecord>> sortByDay = new ArrayList<>();
-        for (int i = 0; i < 7; i++) {
-            sortByDay.add(new ArrayList<>());
-        }
-
-        //
-        for (InventoryRecord inventoryRecord : inventoryRecords) {
-            LocalDate itemDate = LocalDate.parse(inventoryRecord.getDate());
-            int itemDayValue = itemDate.getDayOfWeek().getValue();
-            List<InventoryRecord> list = sortByDay.get(itemDayValue - 1);//list for specific day of the week
-            list.add(inventoryRecord);
-        }
-
-
-        for (List<InventoryRecord> list : sortByDay) { //per day
-            // get all the items with the same ID
-
-            list.stream().filter(inventoryRecord -> inventoryRecord.getItemID());
-
-            long stockSold = 0;
-            for (InventoryRecord inventoryRecord : list) { // all items from the day of the week (ex Monday)
-                //zeptat se hashmapy zdali pouzit den ci ne
-                if (daysWeDontWantToUse.get(inventoryRecord.getDate())) {
-                    continue;
-                }
-
-                //pridat do histogramu
-                stockSold += inventoryRecord.getSoldItems();
-            }
-
-        }
-
-
-        //analyse per obchod
-
-
-        //TODO
-        return "TODO = " + date + " " + shop + " " + item;
+        return daysWeDontWantToUse;
     }
 
 
