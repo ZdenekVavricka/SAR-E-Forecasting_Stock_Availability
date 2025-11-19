@@ -6,16 +6,13 @@ import com.example.forecasting_stock_availability.shop.InventoryRecord;
 import com.example.forecasting_stock_availability.shop.SearchItemBean;
 import com.example.forecasting_stock_availability.shop.ShopsDataLoaderInterface;
 import lombok.NonNull;
-import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
@@ -39,7 +36,7 @@ public class Prediction {
     @Autowired
     private ShopsDataLoaderInterface shopsApi;
 
-    //date, shop, item
+    // date, shop, item
     // add unit of measure
     @GetMapping("/predict/{date}/{shop}/{item}")
     public String predictDate(@PathVariable(value = "date") String date, @PathVariable(value = "shop") String shop, @PathVariable(value = "item") String item) {
@@ -211,15 +208,15 @@ public class Prediction {
                 calcAveragesByHolidays(inventoryRecords);
                 break;
             case HOLIDAYS_BEFORE:
-                // 1 škatulka svátky
+                // 1 škatulka dny před svátky
                 calcAveragesByHolidaysBefore(inventoryRecords);
                 break;
             case HOLIDAYS_AFTER:
-                // 1 škatulka svátky
+                // 1 škatulka dny po svátcích
                 calcAveragesByHolidaysAfter(inventoryRecords);
                 break;
             case QUARTERS:
-                // 4 škatulka kvartály
+                // 4 škatulky kvartály
                 calcAveragesByQuarters(inventoryRecords);
                 break;
             case MONTHS:
