@@ -5,6 +5,7 @@ import com.example.forecasting_stock_availability.data_client.HolidayDataInterfa
 import com.example.forecasting_stock_availability.shop.InventoryRecord;
 import com.example.forecasting_stock_availability.shop.SearchItemBean;
 import com.example.forecasting_stock_availability.shop.ShopsDataLoaderInterface;
+import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,10 +22,14 @@ import java.util.*;
 @RestController
 public class Prediction {
 
-
-    //běží program per obchod nebo má mít přehled o všech obchodech
-    //chceme brát všechny data co jsou k dispozici, nebo jen třeba tři roky zpět a na základě nich predikovat
-    // existují záznamy o položklách o svátkách
+    enum Event {
+        DAY_OF_WEEK,
+        HOLIDAYS,
+        QUARTERS,
+        MONTHS,
+        HOLIDAYS_AFTER_BEFORE,
+        EVENT
+    }
 
 
     @Autowired
@@ -34,12 +39,13 @@ public class Prediction {
     private ShopsDataLoaderInterface shopsApi;
 
     //date, shop, item
+    // add unit of measure
     @GetMapping("/predict/{date}/{shop}/{item}")
     public String predictDate(@PathVariable(value = "date") String date, @PathVariable(value = "shop") String shop, @PathVariable(value = "item") String item) {
-       return "prediction = "+ predict(new SearchItemBean(date, shop, item));
+        return "prediction = " + predict(new SearchItemBean(date, shop, item));
     }
 
-    private boolean predict(SearchItemBean search){
+    private String predict(SearchItemBean search) {
         //TODO validate inputs?
 
 
@@ -103,12 +109,6 @@ public class Prediction {
         }
 
 
-        //pokud je den predikce dále nž 7 dní, tak kšá
-        //jinak získáme počet dní v budoucu
-        //pro každý den udělat predikci a na základě této predikce udělat další predikci
-        //Si = Si-1 − Di + Ri
-
-
         //what day is date
         LocalDate orderDate = LocalDate.parse(search.getDate());
 
@@ -116,9 +116,8 @@ public class Prediction {
         long daysBetweenNowAndAskedPrediction = ChronoUnit.DAYS.between(currentDate, orderDate);
 
 
-
         if (daysBetweenNowAndAskedPrediction > 7) {
-            return false;
+            return "Cannot predict more than 7 days into the future";
         }
 
         List<DateObject> futurePossibleHolidays = holidayApi.getWeek(search.getDate());
@@ -134,31 +133,23 @@ public class Prediction {
             } else {
                 current -= itemAveragesHolidays.getOrDefault(search.getItemID(), 0);
             }
-            System.out.println("i = " + i);
-            System.out.println("current pred restock = " + current);
 
             //do not add restock on the last iteration
-            if (i==daysBetweenNowAndAskedPrediction){
+            if (i == daysBetweenNowAndAskedPrediction) {
                 break;
             }
-
             //add restoct to current stock
-            current += shopsApi.getItemsRestockCount(new SearchItemBean(ChronoUnit.DAYS.addTo(currentDate, i+1).toString(), search.getShopID(), search.getItemID()));
-            System.out.println("current po restock = " + current);
+            current += shopsApi.getItemsRestockCount(new SearchItemBean(ChronoUnit.DAYS.addTo(currentDate, i + 1).toString(), search.getShopID(), search.getItemID()));
 
-        }
-
-        if(current<0){
-            return false;
         }
 
 
         //TODO ask holliday api for future events
 
-
         System.out.println("date = " + search.getDate() + ", item = " + search.getItemID() + ", shop =  " + search.getShopID() + ", average = " + itemAverages.get(search.getItemID()) + ", average holiday = " + itemAveragesHolidays.get(search.getItemID()) + ", Prediction = " + current);
 
-        return true;
+        //TODO maybe return JSON with the predicted number
+        return "Predicted stock: " + current;
     }
 
     private static HashMap<String, Boolean> getHolidays(List<DateObject> allDates) {
@@ -178,5 +169,165 @@ public class Prediction {
         return daysWeDontWantToUse;
     }
 
+    /**
+     * inventoryRecords - must be for sepcific item and shop
+     */
+    private static HashMap<String, Boolean> boxify(List<InventoryRecord> inventoryRecords, @NonNull Event event) {
+
+        switch (event) {
+            case DAY_OF_WEEK:
+                // 7 škatulek podle dní
+                calcAveragesByWeek(inventoryRecords);
+                break;
+            case HOLIDAYS:
+                // 1 škatulka svátky
+                calcAveragesByHolidays(inventoryRecords);
+                break;
+            case HOLIDAYS_AFTER_BEFORE:
+                // 1 škatulka svátky
+                calcAveragesByHolidaysAfterBefore(inventoryRecords);
+                break;
+            case QUARTERS:
+                // 4 škatulka kvartály
+                calcAveragesByQuarters(inventoryRecords);
+                break;
+            case MONTHS:
+                // 12 škatulek měsíce
+                calcAveragesByMonths(inventoryRecords);
+                break;
+            case EVENT:
+                // 1 škatulka event
+                calcAveragesByEvent(inventoryRecords);
+                break;
+        }
+
+        return null;
+    }
+
+    private static HashMap<Integer, Integer> calcAveragesByWeek(List<InventoryRecord> inventoryRecords) {
+        HashMap<Integer, List<InventoryRecord>> weeksInventory = new HashMap<>();
+        HashMap<Integer, Integer> weeksAverages = new HashMap<>();
+
+        for (int i = 0; i < 7; i++) {
+            weeksInventory.put(i, new ArrayList<>());
+        }
+
+        for (InventoryRecord inventoryRecord : inventoryRecords) {
+            String stringDate = inventoryRecord.getDate();
+            LocalDate date = LocalDate.parse(stringDate);
+            weeksInventory.get(date.getDayOfWeek().getValue() - 1).add(inventoryRecord);
+        }
+
+        weeksInventory.forEach((key, value) -> {
+            int soldItems = 0;
+
+            for (InventoryRecord inventoryRecord : value) {
+                soldItems += inventoryRecord.getSoldItems();
+            }
+
+            if (value.isEmpty()) {
+                weeksAverages.put(key, 0);
+            } else {
+                int averageSold = (int) (soldItems / (double) value.size());
+                weeksAverages.put(key, averageSold);
+            }
+        });
+
+        return weeksAverages;
+    }
+
+    private static HashMap<Integer, Integer> calcAveragesByHolidays(List<InventoryRecord> inventoryRecords) {
+        return null;
+    }
+
+    private static HashMap<Integer, Integer> calcAveragesByHolidaysAfterBefore(List<InventoryRecord> inventoryRecords) {
+        return null;
+    }
+
+    private static HashMap<Integer, Integer> calcAveragesByQuarters(List<InventoryRecord> inventoryRecords) {
+        HashMap<Integer, List<InventoryRecord>> monthsInventory = new HashMap<>();
+        HashMap<Integer, List<InventoryRecord>> quartersInventory = new HashMap<>();
+        HashMap<Integer, Integer> quartersAverages = new HashMap<>();
+
+        for (int i = 0; i < 4; i++) {
+            quartersInventory.put(i, new ArrayList<>());
+        }
+
+        for (int i = 0; i < 12; i++) {
+            monthsInventory.put(i, new ArrayList<>());
+        }
+
+        for (InventoryRecord inventoryRecord : inventoryRecords) {
+            String stringDate = inventoryRecord.getDate();
+            LocalDate date = LocalDate.parse(stringDate);
+            monthsInventory.get(date.getMonthValue() - 1).add(inventoryRecord);
+        }
+
+        for (int i = 0; i < 12; i += 3) {
+            List<InventoryRecord> month1 = monthsInventory.get(i);
+            List<InventoryRecord> month2 = monthsInventory.get(i + 1);
+            List<InventoryRecord> month3 = monthsInventory.get(i + 2);
+
+            List<InventoryRecord> quarter = quartersInventory.get(i/3);
+            quarter.addAll(month1);
+            quarter.addAll(month2);
+            quarter.addAll(month3);
+
+            quartersInventory.put(i / 3, quarter);
+        }
+
+        quartersInventory.forEach((key, value) -> {
+            int soldItems = 0;
+
+            for (InventoryRecord inventoryRecord : value) {
+                soldItems += inventoryRecord.getSoldItems();
+            }
+
+            if (value.isEmpty()) {
+                quartersAverages.put(key, 0);
+            } else {
+                int averageSold = (int) (soldItems / (double) value.size());
+                quartersAverages.put(key, averageSold);
+            }
+        });
+
+        return quartersAverages;
+    }
+
+    private static HashMap<Integer, Integer> calcAveragesByMonths(List<InventoryRecord> inventoryRecords) {
+        HashMap<Integer, List<InventoryRecord>> monthsInventory = new HashMap<>();
+        HashMap<Integer, Integer> monthsAverages = new HashMap<>();
+
+        for (int i = 0; i < 12; i++) {
+            monthsInventory.put(i, new ArrayList<>());
+        }
+
+        for (InventoryRecord inventoryRecord : inventoryRecords) {
+            String stringDate = inventoryRecord.getDate();
+            LocalDate date = LocalDate.parse(stringDate);
+            monthsInventory.get(date.getMonthValue() - 1).add(inventoryRecord);
+        }
+
+        monthsInventory.forEach((key, value) -> {
+            int soldItems = 0;
+
+            for (InventoryRecord inventoryRecord : value) {
+                soldItems += inventoryRecord.getSoldItems();
+            }
+
+            if (value.isEmpty()) {
+                monthsAverages.put(key, 0);
+            } else {
+                int averageSold = (int) (soldItems / (double) value.size());
+                monthsAverages.put(key, averageSold);
+            }
+        });
+
+        return monthsAverages;
+    }
+
+    private static HashMap<Integer, Integer> calcAveragesByEvent(List<InventoryRecord> inventoryRecords) {
+        return null;
+    }
 
 }
