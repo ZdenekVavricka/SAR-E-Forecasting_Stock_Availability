@@ -41,17 +41,4 @@ public class ForecastingStockAvailabilityApplication extends SpringBootServletIn
     public String hello() {
         return shopsApi.loadData().toString();
     }
-
-    @GetMapping({"/hello5",
-            "/hello5/{date}",
-            "/hello5/{date}/{shopID}",
-            "/hello5/{date}/{shopID}/{itemID}"})
-    public String hello5(@PathVariable(value = "date", required = false) String date,
-                         @PathVariable(value = "shopID",required = false) String shopID,
-                         @PathVariable(value = "itemID",required = false) String itemID) {
-
-        SearchItemBean searchItemBean = new SearchItemBean(date, shopID, itemID);
-           return shopsApi.getInventoryRecords(searchItemBean).toString();
-    }
-
 }

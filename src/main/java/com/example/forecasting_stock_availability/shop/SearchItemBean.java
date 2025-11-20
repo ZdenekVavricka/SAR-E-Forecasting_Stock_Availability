@@ -1,32 +1,14 @@
 package com.example.forecasting_stock_availability.shop;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-@Setter
-@Getter
+@Data
 public class SearchItemBean {
-    private String date;
+    private String predictDate;
+    private String dataStartDate;
+    private String dataEndDate;
     private String shopID;
     private String itemID;
 
-    public SearchItemBean(String date, String shopID, String itemID) {
-        this.date = date;
-        this.shopID = shopID;
-        this.itemID = itemID;
-    }
-
-
-    public SearchItemBean(String shopID, String itemID){
-        this.shopID = shopID;
-        this.itemID = itemID;
-    }
-
-    public SearchItemBean(String shopID){
-        this.shopID = shopID;
-    }
-
-    public SearchItemBean(){
-    }
 
 }

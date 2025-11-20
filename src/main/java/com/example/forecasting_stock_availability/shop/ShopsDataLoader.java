@@ -7,8 +7,11 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -66,11 +69,10 @@ public class ShopsDataLoader implements ShopsDataLoaderInterface {
     public List<InventoryRecord> getInventoryRecords(SearchItemBean search) {
         loadData();
 
-        List<InventoryRecord> inventory = new ArrayList<>();
         Stream<InventoryRecord> stream = inventoryRecords.stream();
 
-        if (search.getDate() != null) {
-            stream = stream.filter(item -> item.getDate().equals(search.getDate()));
+        if (search.getPredictDate() != null) {
+            stream = stream.filter(item -> item.getDate().equals(search.getPredictDate()));
         }
 
         if (search.getShopID() != null) {
@@ -79,6 +81,16 @@ public class ShopsDataLoader implements ShopsDataLoaderInterface {
 
         if (search.getItemID() != null) {
             stream = stream.filter(item -> item.getItemID().equals(search.getItemID()));
+        }
+
+        if (search.getDataStartDate() != null) {
+            LocalDate startDate = LocalDate.parse(search.getDataStartDate()).minusDays(1);
+            stream = stream.filter(item -> LocalDate.parse(item.getDate()).isAfter(startDate));
+        }
+
+        if (search.getDataEndDate() != null) {
+            LocalDate endDate = LocalDate.parse(search.getDataEndDate()).plusDays(1);
+            stream = stream.filter(item -> LocalDate.parse(item.getDate()).isBefore(endDate));
         }
 
         return stream.collect(Collectors.toList());
@@ -93,12 +105,16 @@ public class ShopsDataLoader implements ShopsDataLoaderInterface {
     @Override
     public int getCurrentDayItemStock(SearchItemBean search) {
         //only use search.getItemID() and search.getShopID()
+
         return 300;
     }
 
     public int getItemsRestockCount(SearchItemBean search){
-        return 80;
+        Random r = new Random(search.getItemID().hashCode() + search.getShopID().hashCode());
+        List<Integer> list = new ArrayList<>();
+        for (int i = 0; i < 31; i++) {
+            list.add(r.nextInt(150)-1);
+        }
+        return list.get(LocalDate.parse(search.getPredictDate()).getDayOfMonth()-1);
     }
-
-
 }
