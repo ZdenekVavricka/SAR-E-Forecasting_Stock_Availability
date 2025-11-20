@@ -73,14 +73,14 @@ public class Prediction {
         // get data using search bean
         List<InventoryRecord> inventoryRecords = shopsApi.getInventoryRecords(search);
 
-        //kolik dni musime predikovat - max 7
-        //vezmeme date - z parametru metody a zjistime kolik je to dni od dnes
+
+
 
         LocalDate currentDate = Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneId.systemDefault()).toLocalDate();
         int daysBetween = (int) ChronoUnit.DAYS.between(currentDate, predictDate);
 
 
-        // boxify pro všechny enum
+        // boxify for every enum
         HashMap<Events, HashMap<Integer, Integer>> averagesPerEvents = new HashMap<>();
         for (Events event : Events.values()) {
             averagesPerEvents.put(event, boxify(inventoryRecords, event));
@@ -90,7 +90,7 @@ public class Prediction {
         currentStoctSearchBean.setShopID(search.getShopID());
         currentStoctSearchBean.setItemID(search.getItemID());
 
-        List<DateObject> possibleHolidays = holidayApi.getDateInterval(currentDate.toString(), daysBetween+1);
+        List<DateObject> possibleHolidays = holidayApi.getDateInterval(currentDate.toString(), daysBetween + 1);
         HashMap<String, Boolean> holidaysOnly = getHolidaysOnly(possibleHolidays);
         HashMap<String, Boolean> holidaysBefore = getDayBeforeHolidays(possibleHolidays);
         HashMap<String, Boolean> holidaysAfter = getDayAfterHolidays(possibleHolidays);
@@ -209,25 +209,18 @@ public class Prediction {
 
         return switch (event) {
             case DAY_OF_WEEK ->
-                // 7 škatulek podle dní
                     calcAveragesByWeek(inventoryRecords);
             case HOLIDAYS ->
-                // 1 škatulka svátky
                     calcAveragesByHolidays(inventoryRecords);
             case HOLIDAYS_BEFORE ->
-                // 1 škatulka dny před svátky
                     calcAveragesByHolidaysBefore(inventoryRecords);
             case HOLIDAYS_AFTER ->
-                // 1 škatulka dny po svátcích
                     calcAveragesByHolidaysAfter(inventoryRecords);
             case QUARTERS ->
-                // 4 škatulky kvartály
                     calcAveragesByQuarters(inventoryRecords);
             case MONTHS ->
-                // 12 škatulek měsíce
                     calcAveragesByMonths(inventoryRecords);
             case EVENT ->
-                // 1 škatulka event
                     calcAveragesByEvent(inventoryRecords);
         };
 
@@ -467,6 +460,8 @@ public class Prediction {
 
     private HashMap<Integer, Integer> calcAveragesByEvent(List<InventoryRecord> inventoryRecords) {
         //TODO we need an endpoint
+
+        //sent request to the shop with date - it will reply with yes / no - we have a event like black friday or i dunno something
         return null;
     }
 }
