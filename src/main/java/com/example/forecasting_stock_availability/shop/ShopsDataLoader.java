@@ -1,6 +1,8 @@
 package com.example.forecasting_stock_availability.shop;
 
 
+import com.example.forecasting_stock_availability.endpoins.ShopsEndpoints;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -18,6 +20,9 @@ import java.util.stream.Stream;
 
 @Component
 public class ShopsDataLoader implements ShopsDataLoaderInterface {
+    @Autowired
+    ShopsEndpoints shopsEndpoints;
+
 
     public List<InventoryRecord> inventoryRecords = null;
 
@@ -106,15 +111,41 @@ public class ShopsDataLoader implements ShopsDataLoaderInterface {
     public int getCurrentDayItemStock(SearchItemBean search) {
         //only use search.getItemID() and search.getShopID()
 
+        String endpointURL = shopsEndpoints.getEndpointURL(search.getShopID(), ShopsEndpoints.Endpoints.getCurrentDayItemStock);
+
         return 300;
     }
 
-    public int getItemsRestockCount(SearchItemBean search){
+    public int getItemsRestockCount(SearchItemBean search) {
+        String endpointURL = shopsEndpoints.getEndpointURL(search.getShopID(), ShopsEndpoints.Endpoints.getItemsRestockCount);
+
         Random r = new Random(search.getItemID().hashCode() + search.getShopID().hashCode());
         List<Integer> list = new ArrayList<>();
         for (int i = 0; i < 31; i++) {
-            list.add(r.nextInt(150)-1);
+            list.add(r.nextInt(150) - 1);
         }
-        return list.get(LocalDate.parse(search.getPredictDate()).getDayOfMonth()-1);
+        return list.get(LocalDate.parse(search.getPredictDate()).getDayOfMonth() - 1);
+
+    }
+
+    /**
+     * is there an event in the shop during the specified date
+     */
+    public HashMap<String, Boolean> hasEventDuringDate(String shopID, String date, int interval) {
+        String endpointURL = shopsEndpoints.getEndpointURL(shopID, ShopsEndpoints.Endpoints.hasEventDuringDate);
+
+        Random r = new Random(date.hashCode());
+        HashMap<String, Boolean> map = new HashMap<>();
+
+
+        LocalDate startDate = LocalDate.parse(date);
+        for (int i = 0; i < interval; i++) {
+            LocalDate nextDay = startDate.plusDays(i);
+            if (r.nextInt(100) > 90) {
+                map.put(nextDay.toString(), true);
+            }
+        }
+
+        return map;
     }
 }

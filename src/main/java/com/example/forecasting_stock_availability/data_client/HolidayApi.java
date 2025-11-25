@@ -3,16 +3,20 @@ package com.example.forecasting_stock_availability.data_client;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Collections;
 import java.util.List;
 
 @Component
-
 public class HolidayApi implements HolidayDataInterface {
-    private final String API_URL = "https://svatkyapi.cz/api/";
+
+    @Value("${holidays.getHolidays}")
+    private String API_URL;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
@@ -76,6 +80,7 @@ public class HolidayApi implements HolidayDataInterface {
      * @return List of DataObject
      */
     private List<DateObject> getData(String uri) {
+
         String json = restTemplate.getForObject(uri, String.class);
         try {
             // Check if the JSON starts with '[' → it's an array

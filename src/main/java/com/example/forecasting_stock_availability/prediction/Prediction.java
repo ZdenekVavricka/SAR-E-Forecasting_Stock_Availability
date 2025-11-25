@@ -22,7 +22,6 @@ import java.util.*;
 @RestController
 public class Prediction {
 
-
     enum Events {
         DAY_OF_WEEK,
         HOLIDAYS,
@@ -43,6 +42,8 @@ public class Prediction {
     // add unit of measure
     @GetMapping("/predict/{date}/{shop}/{item}")
     public String predictDate(@PathVariable(value = "date") String date, @PathVariable(value = "shop") String shop, @PathVariable(value = "item") String item) {
+
+
         SearchItemBean searchItemBean = new SearchItemBean();
         LocalDate currentDate = Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneId.systemDefault()).toLocalDate();
 
@@ -65,16 +66,24 @@ public class Prediction {
         searchItemBean.setDataEndDate(currentDate.toString());
         searchItemBean.setDataStartDate(currentDate.minusDays(365 * 2).toString());
 
+        try {
+            int predictionResult = predict(searchItemBean, predictDate);
+            return "prediction = " + predictionResult;
+        } catch (RuntimeException e) {
+            return "Not enough data found for prediction!";
+        }
 
-        return "prediction = " + predict(searchItemBean, predictDate);
     }
 
     private int predict(SearchItemBean search, LocalDate predictDate) {
         // get data using search bean
         List<InventoryRecord> inventoryRecords = shopsApi.getInventoryRecords(search);
 
+        System.out.println("inventoryRecordsSize: " + inventoryRecords.size());
 
-
+        if (inventoryRecords.isEmpty()) {
+            throw new RuntimeException("No inventory records found");
+        }
 
         LocalDate currentDate = Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneId.systemDefault()).toLocalDate();
         int daysBetween = (int) ChronoUnit.DAYS.between(currentDate, predictDate);
@@ -94,6 +103,7 @@ public class Prediction {
         HashMap<String, Boolean> holidaysOnly = getHolidaysOnly(possibleHolidays);
         HashMap<String, Boolean> holidaysBefore = getDayBeforeHolidays(possibleHolidays);
         HashMap<String, Boolean> holidaysAfter = getDayAfterHolidays(possibleHolidays);
+
 
         int currentStock = shopsApi.getCurrentDayItemStock(currentStoctSearchBean);
 
@@ -135,12 +145,9 @@ public class Prediction {
                 listAveragesToMakeAverageFrom.add(averageForPredictedHolidaysAfter);
             }
 
-            /* TODO - we are missin the end point  that will tell us if the date is black friday or something like that
-            if (holidaysBefore.get(dateForPrediction.toString())!=null){
-                int averageForPredictedEvent = averagesPerEvents.get(Events.EVENT).get(0);
-                listAveragesToMakeAverageFrom.add(averageForPredictedEvent);
-            }
-            */
+            int averageForPredictedEvent = averagesPerEvents.get(Events.EVENT).get(0);
+            listAveragesToMakeAverageFrom.add(averageForPredictedEvent);
+
 
             int tempAverageCount = 0;
 
@@ -208,20 +215,13 @@ public class Prediction {
     private HashMap<Integer, Integer> boxify(List<InventoryRecord> inventoryRecords, @NonNull Prediction.Events event) {
 
         return switch (event) {
-            case DAY_OF_WEEK ->
-                    calcAveragesByWeek(inventoryRecords);
-            case HOLIDAYS ->
-                    calcAveragesByHolidays(inventoryRecords);
-            case HOLIDAYS_BEFORE ->
-                    calcAveragesByHolidaysBefore(inventoryRecords);
-            case HOLIDAYS_AFTER ->
-                    calcAveragesByHolidaysAfter(inventoryRecords);
-            case QUARTERS ->
-                    calcAveragesByQuarters(inventoryRecords);
-            case MONTHS ->
-                    calcAveragesByMonths(inventoryRecords);
-            case EVENT ->
-                    calcAveragesByEvent(inventoryRecords);
+            case DAY_OF_WEEK -> calcAveragesByWeek(inventoryRecords);
+            case HOLIDAYS -> calcAveragesByHolidays(inventoryRecords);
+            case HOLIDAYS_BEFORE -> calcAveragesByHolidaysBefore(inventoryRecords);
+            case HOLIDAYS_AFTER -> calcAveragesByHolidaysAfter(inventoryRecords);
+            case QUARTERS -> calcAveragesByQuarters(inventoryRecords);
+            case MONTHS -> calcAveragesByMonths(inventoryRecords);
+            case EVENT -> calcAveragesByEvent(inventoryRecords);
         };
 
     }
@@ -275,7 +275,7 @@ public class Prediction {
         HashMap<String, Boolean> holidays = getHolidaysOnly(allDates);
 
         for (InventoryRecord inventoryRecord : inventoryRecords) {
-            if (holidays.get(inventoryRecord.getDate()) != null) {
+            if (holidays.get(inventoryRecord.getDate()) != null && holidays.get(inventoryRecord.getDate())) {
                 holidaysInventory.get(0).add(inventoryRecord);
             }
         }
@@ -314,7 +314,7 @@ public class Prediction {
         HashMap<String, Boolean> holidays = getDayBeforeHolidays(allDates);
 
         for (InventoryRecord inventoryRecord : inventoryRecords) {
-            if (holidays.get(inventoryRecord.getDate()) != null) {
+            if (holidays.get(inventoryRecord.getDate()) != null && holidays.get(inventoryRecord.getDate())) {
                 holidaysBeforeInventory.get(0).add(inventoryRecord);
             }
         }
@@ -353,7 +353,7 @@ public class Prediction {
         HashMap<String, Boolean> holidays = getDayAfterHolidays(allDates);
 
         for (InventoryRecord inventoryRecord : inventoryRecords) {
-            if (holidays.get(inventoryRecord.getDate()) != null) {
+            if (holidays.get(inventoryRecord.getDate()) != null && holidays.get(inventoryRecord.getDate())) {
                 holidaysAfterInventory.get(0).add(inventoryRecord);
             }
         }
@@ -459,9 +459,41 @@ public class Prediction {
     }
 
     private HashMap<Integer, Integer> calcAveragesByEvent(List<InventoryRecord> inventoryRecords) {
-        //TODO we need an endpoint
+        HashMap<Integer, Integer> eventAverages = new HashMap<>();
 
-        //sent request to the shop with date - it will reply with yes / no - we have a event like black friday or i dunno something
-        return null;
+        HashMap<Integer, List<InventoryRecord>> eventInventory = new HashMap<>();
+        //init
+        eventInventory.put(0, new ArrayList<>());
+
+
+        LocalDate oldestDate = inventoryRecords.stream().map(ir -> LocalDate.parse(ir.getDate())).min(LocalDate::compareTo).orElse(null);
+        LocalDate latestDate = inventoryRecords.stream().map(ir -> LocalDate.parse(ir.getDate())).max(LocalDate::compareTo).orElse(null);
+
+        long daysBetween = ChronoUnit.DAYS.between(oldestDate, latestDate);
+
+        HashMap<String, Boolean> events = shopsApi.hasEventDuringDate(inventoryRecords.getFirst().getShopID(), oldestDate.toString(), (int) daysBetween);
+
+        for (InventoryRecord inventoryRecord : inventoryRecords) {
+            if (events.get(inventoryRecord.getDate()) != null && events.get(inventoryRecord.getDate())) {
+                eventInventory.get(0).add(inventoryRecord);
+            }
+        }
+
+        eventInventory.forEach((key, value) -> {
+            int soldItems = 0;
+
+            for (InventoryRecord inventoryRecord : value) {
+                soldItems += inventoryRecord.getSoldItems();
+            }
+
+            if (value.isEmpty()) {
+                eventAverages.put(key, 0);
+            } else {
+                int averageSold = (int) (soldItems / (double) value.size());
+                eventAverages.put(key, averageSold);
+            }
+        });
+
+        return eventAverages;
     }
 }
