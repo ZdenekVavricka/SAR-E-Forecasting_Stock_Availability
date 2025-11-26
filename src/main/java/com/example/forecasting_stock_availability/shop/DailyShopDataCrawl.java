@@ -17,7 +17,6 @@ import java.util.Random;
 
 public class DailyShopDataCrawl {
 
-
     @Autowired
     private RestTemplate restTemplate;
     @Autowired
@@ -68,7 +67,6 @@ public class DailyShopDataCrawl {
             }
 
             System.out.println("SAVING INTO DB");
-            //TODO save LIST to db - inventoryRecords
 
             inventoryRecordsManager.saveInventoryRecords(inventoryRecords);
 
