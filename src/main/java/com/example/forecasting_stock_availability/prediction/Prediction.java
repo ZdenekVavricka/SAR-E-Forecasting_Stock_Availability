@@ -104,7 +104,7 @@ public class Prediction {
         HashMap<String, Boolean> holidaysBefore = getDayBeforeHolidays(possibleHolidays);
         HashMap<String, Boolean> holidaysAfter = getDayAfterHolidays(possibleHolidays);
 
-        //TODO zeptat se obchodu na eventy od dnešního dne do daysBetween + 1
+        /*date, true - if there is an event during the date*/
         HashMap<String, Boolean> events = shopsApi.hasEventDuringDate(search.getShopID(), currentDate.toString(), daysBetween + 1);
 
         int currentStock = shopsApi.getCurrentDayItemStock(currentStoctSearchBean);
@@ -147,8 +147,10 @@ public class Prediction {
                 listAveragesToMakeAverageFrom.add(averageForPredictedHolidaysAfter);
             }
 
-            int averageForPredictedEvent = averagesPerEvents.get(Events.EVENT).get(0);
-            listAveragesToMakeAverageFrom.add(averageForPredictedEvent);
+            if (events.get(dateForPrediction.toString()) != null) {
+                int averageForPredictedEvent = averagesPerEvents.get(Events.EVENT).get(0);
+                listAveragesToMakeAverageFrom.add(averageForPredictedEvent);
+            }
 
 
             int tempAverageCount = 0;
@@ -160,7 +162,6 @@ public class Prediction {
             int finalAverageForDay = tempAverageCount / listAveragesToMakeAverageFrom.size();
 
             //restock
-
             SearchItemBean restockSearchBean = new SearchItemBean();
             restockSearchBean.setShopID(search.getShopID());
             restockSearchBean.setItemID(search.getItemID());

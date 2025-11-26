@@ -49,7 +49,6 @@ public class ShopsEndpoints {
 
         }
 
-        shopsEndpointsUrls.forEach((s, stringStringHashMap) -> System.out.println("s="+s+", stringStringHashMap="+stringStringHashMap.toString()));
     }
 
     // Get the URL of a particular shop and endpoint

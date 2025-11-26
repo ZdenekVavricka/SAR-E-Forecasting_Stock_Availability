@@ -3,11 +3,18 @@ package com.example.forecasting_stock_availability.shop;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 @Setter
 @Getter
 @ToString
+
+@Document(collection = "inventoryRecords")
 public class InventoryRecord {
+
+    @Id
+    String recordID;
 
     String date;
 

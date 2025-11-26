@@ -1,5 +1,6 @@
 package com.example.forecasting_stock_availability.shop;
 
+import com.example.forecasting_stock_availability.DB.InventoryRecordsManager;
 import com.example.forecasting_stock_availability.endpoins.ShopsEndpoints;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,9 +23,11 @@ public class DailyShopDataCrawl {
     @Autowired
     ShopsEndpoints shopsEndpoints;
 
+    @Autowired
+    InventoryRecordsManager inventoryRecordsManager;
 
-//    @Scheduled(cron = "0 59 23 * * *")
-    @Scheduled(cron = "0 * * * * *")
+    @Scheduled(cron = "0 59 23 * * *")
+//    @Scheduled(cron = "0 * * * * *")
     public void callEndpoint() {
         System.out.println("CRON JOB CRAWL");
 
@@ -53,6 +56,7 @@ public class DailyShopDataCrawl {
                 int currentLevel = r.nextInt(5,200);
                 int soldItems = r.nextInt(0,currentLevel);
 
+                inventoryRecord.setRecordID(j+"-"+date+"-"+shopID+"-"+itemID);
                 inventoryRecord.setDate(date);
                 inventoryRecord.setShopID(shopID);
                 inventoryRecord.setItemID(itemID);
@@ -66,7 +70,7 @@ public class DailyShopDataCrawl {
             System.out.println("SAVING INTO DB");
             //TODO save LIST to db - inventoryRecords
 
-
+            inventoryRecordsManager.saveInventoryRecords(inventoryRecords);
 
             System.out.println("CRON JOB FINISHED");
 
