@@ -23,6 +23,11 @@ public class InventoryRecord {
 
     private int soldItems;
 
+    /**
+     * black friday, or cyber monday. NOT HOLLIDAY. Either 0 or 1 (false, true)
+     */
+    private String duringEvent;
+
     public int getStartingStock(){
         return currentLevel + soldItems;
     }

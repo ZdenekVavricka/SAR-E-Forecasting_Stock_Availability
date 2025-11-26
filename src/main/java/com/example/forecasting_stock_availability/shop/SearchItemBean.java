@@ -9,6 +9,4 @@ public class SearchItemBean {
     private String dataEndDate;
     private String shopID;
     private String itemID;
-
-
 }

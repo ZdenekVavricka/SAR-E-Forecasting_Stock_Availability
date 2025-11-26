@@ -104,6 +104,8 @@ public class Prediction {
         HashMap<String, Boolean> holidaysBefore = getDayBeforeHolidays(possibleHolidays);
         HashMap<String, Boolean> holidaysAfter = getDayAfterHolidays(possibleHolidays);
 
+        //TODO zeptat se obchodu na eventy od dnešního dne do daysBetween + 1
+        HashMap<String, Boolean> events = shopsApi.hasEventDuringDate(search.getShopID(), currentDate.toString(), daysBetween + 1);
 
         int currentStock = shopsApi.getCurrentDayItemStock(currentStoctSearchBean);
 
@@ -465,16 +467,8 @@ public class Prediction {
         //init
         eventInventory.put(0, new ArrayList<>());
 
-
-        LocalDate oldestDate = inventoryRecords.stream().map(ir -> LocalDate.parse(ir.getDate())).min(LocalDate::compareTo).orElse(null);
-        LocalDate latestDate = inventoryRecords.stream().map(ir -> LocalDate.parse(ir.getDate())).max(LocalDate::compareTo).orElse(null);
-
-        long daysBetween = ChronoUnit.DAYS.between(oldestDate, latestDate);
-
-        HashMap<String, Boolean> events = shopsApi.hasEventDuringDate(inventoryRecords.getFirst().getShopID(), oldestDate.toString(), (int) daysBetween);
-
         for (InventoryRecord inventoryRecord : inventoryRecords) {
-            if (events.get(inventoryRecord.getDate()) != null && events.get(inventoryRecord.getDate())) {
+            if (inventoryRecord.getDuringEvent().equals("1")) {
                 eventInventory.get(0).add(inventoryRecord);
             }
         }

@@ -37,6 +37,7 @@ public class ShopsDataLoader implements ShopsDataLoaderInterface {
             record.setShopID(tokens[1]);
             record.setItemID(tokens[2]);
             record.setName(tokens[3]);
+            record.setDuringEvent(tokens[12]);
             record.setUnitType("ks");
             record.setCurrentLevel(Integer.parseInt(tokens[5]));
             record.setSoldItems(Integer.parseInt(tokens[6]));

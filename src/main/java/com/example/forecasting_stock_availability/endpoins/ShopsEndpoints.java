@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 
 @Component
-@ConfigurationProperties(prefix = "shops")  // Bind to the properties starting with 'shops'
+@ConfigurationProperties(prefix = "shops")
 public class ShopsEndpoints {
 
     public enum Endpoints {
