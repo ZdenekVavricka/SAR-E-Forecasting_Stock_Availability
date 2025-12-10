@@ -56,5 +56,4 @@ public class ShopsEndpoints {
         HashMap<String, String> endpoints = shopsEndpointsUrls.get(shopID);
         return (endpoints != null) ? endpoints.get(endpoint.name()) : null;
     }
-
 }

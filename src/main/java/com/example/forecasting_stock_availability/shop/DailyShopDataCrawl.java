@@ -21,7 +21,6 @@ public class DailyShopDataCrawl {
     private RestTemplate restTemplate;
     @Autowired
     ShopsEndpoints shopsEndpoints;
-
     @Autowired
     InventoryRecordsManager inventoryRecordsManager;
 
@@ -54,6 +53,7 @@ public class DailyShopDataCrawl {
                 String units = "ks";
                 int currentLevel = r.nextInt(5,200);
                 int soldItems = r.nextInt(0,currentLevel);
+                String duringEvent = "0";
 
                 inventoryRecord.setRecordID(j+"-"+date+"-"+shopID+"-"+itemID);
                 inventoryRecord.setDate(date);
@@ -63,6 +63,7 @@ public class DailyShopDataCrawl {
                 inventoryRecord.setUnitType(units);
                 inventoryRecord.setCurrentLevel(currentLevel);
                 inventoryRecord.setSoldItems(soldItems);
+                inventoryRecord.setDuringEvent(duringEvent);
                 inventoryRecords.add(inventoryRecord);
             }
 

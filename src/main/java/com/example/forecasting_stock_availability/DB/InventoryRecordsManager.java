@@ -19,4 +19,6 @@ public class InventoryRecordsManager {
     public void saveInventoryRecords(List<InventoryRecord> inventoryRecords) {
         inventoryRecordsRepository.saveAll(inventoryRecords);
     }
+
+
 }

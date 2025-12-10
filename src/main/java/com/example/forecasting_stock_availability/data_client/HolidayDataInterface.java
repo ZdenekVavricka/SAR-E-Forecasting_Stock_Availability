@@ -11,7 +11,4 @@ public interface HolidayDataInterface {
     List<DateObject> getWeek(String date);
 
     List<DateObject> getDateInterval(String date, int interval);
-
-
-
 }

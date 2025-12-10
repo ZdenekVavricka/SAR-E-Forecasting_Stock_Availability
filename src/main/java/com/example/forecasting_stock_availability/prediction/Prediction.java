@@ -5,8 +5,11 @@ import com.example.forecasting_stock_availability.data_client.HolidayDataInterfa
 import com.example.forecasting_stock_availability.shop.InventoryRecord;
 import com.example.forecasting_stock_availability.shop.SearchItemBean;
 import com.example.forecasting_stock_availability.shop.ShopsDataLoaderInterface;
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,7 +23,30 @@ import java.util.*;
 
 @Component
 @RestController
+@ConfigurationProperties(prefix = "prediction")
 public class Prediction {
+
+    @Getter
+    @Setter
+    private double dayOfWeekMultiplier;
+    @Getter
+    @Setter
+    private double holidaysMultiplier;
+    @Getter
+    @Setter
+    private double quartersMultiplier;
+    @Getter
+    @Setter
+    private double monthsMultiplier;
+    @Getter
+    @Setter
+    private double holidaysBeforeMultiplier;
+    @Getter
+    @Setter
+    private double holidaysAfterMultiplier;
+    @Getter
+    @Setter
+    private double eventMultiplier;
 
     enum Events {
         DAY_OF_WEEK,
@@ -70,7 +96,8 @@ public class Prediction {
             int predictionResult = predict(searchItemBean, predictDate);
             return "prediction = " + predictionResult;
         } catch (RuntimeException e) {
-            return "Not enough data found for prediction!";
+            System.out.println(e);
+            return "Not enough data found for prediction!" + e;
         }
 
     }
@@ -113,7 +140,7 @@ public class Prediction {
         //prediction for the future
         for (int i = 0; i <= daysBetween; i++) {
 
-            List<Integer> listAveragesToMakeAverageFrom = new ArrayList<>();
+            List<Double> listAveragesToMakeAverageFrom = new ArrayList<>();
 
             LocalDate dateForPrediction = currentDate.plusDays(i);
             int day = dateForPrediction.getDayOfWeek().getValue() - 1;
@@ -121,41 +148,41 @@ public class Prediction {
             int quarter = month / 3;
 
             HashMap<Integer, Integer> daysOfWeeksAverages = averagesPerEvents.get(Events.DAY_OF_WEEK);
-            int averageForPredictedDateOfWeek = daysOfWeeksAverages.get(day);
-            listAveragesToMakeAverageFrom.add(averageForPredictedDateOfWeek);
+            double averageForPredictedDayOfWeek = daysOfWeeksAverages.get(day) * dayOfWeekMultiplier;
+            listAveragesToMakeAverageFrom.add(averageForPredictedDayOfWeek);
 
             HashMap<Integer, Integer> monthsAverages = averagesPerEvents.get(Events.MONTHS);
-            int averageForPredictedMonths = monthsAverages.get(month);
+            double averageForPredictedMonths = monthsAverages.get(month) * monthsMultiplier;
             listAveragesToMakeAverageFrom.add(averageForPredictedMonths);
 
             HashMap<Integer, Integer> quarterSAverages = averagesPerEvents.get(Events.QUARTERS);
-            int averageForPredictedQuarters = quarterSAverages.get(quarter);
+            double averageForPredictedQuarters = quarterSAverages.get(quarter) * quartersMultiplier;
             listAveragesToMakeAverageFrom.add(averageForPredictedQuarters);
 
             if (holidaysBefore.get(dateForPrediction.toString()) != null) {
-                int averageForPredictedHolidaysBefore = averagesPerEvents.get(Events.HOLIDAYS_BEFORE).get(0);
+                double averageForPredictedHolidaysBefore = averagesPerEvents.get(Events.HOLIDAYS_BEFORE).get(0) * holidaysBeforeMultiplier;
                 listAveragesToMakeAverageFrom.add(averageForPredictedHolidaysBefore);
             }
 
             if (holidaysOnly.get(dateForPrediction.toString()) != null) {
-                int averageForPredictedHolidaysOnly = averagesPerEvents.get(Events.HOLIDAYS).get(0);
+                double averageForPredictedHolidaysOnly = averagesPerEvents.get(Events.HOLIDAYS).get(0) * holidaysMultiplier;
                 listAveragesToMakeAverageFrom.add(averageForPredictedHolidaysOnly);
             }
 
             if (holidaysAfter.get(dateForPrediction.toString()) != null) {
-                int averageForPredictedHolidaysAfter = averagesPerEvents.get(Events.HOLIDAYS_AFTER).get(0);
+                double averageForPredictedHolidaysAfter = averagesPerEvents.get(Events.HOLIDAYS_AFTER).get(0) * holidaysAfterMultiplier;
                 listAveragesToMakeAverageFrom.add(averageForPredictedHolidaysAfter);
             }
 
             if (events.get(dateForPrediction.toString()) != null) {
-                int averageForPredictedEvent = averagesPerEvents.get(Events.EVENT).get(0);
+                double averageForPredictedEvent = averagesPerEvents.get(Events.EVENT).get(0) * eventMultiplier;
                 listAveragesToMakeAverageFrom.add(averageForPredictedEvent);
             }
 
 
             int tempAverageCount = 0;
 
-            for (Integer averageForEvents : listAveragesToMakeAverageFrom) {
+            for (Double averageForEvents : listAveragesToMakeAverageFrom) {
                 tempAverageCount += averageForEvents;
             }
 

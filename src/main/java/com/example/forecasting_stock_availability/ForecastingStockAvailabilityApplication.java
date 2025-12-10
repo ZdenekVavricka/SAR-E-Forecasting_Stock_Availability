@@ -1,6 +1,7 @@
 package com.example.forecasting_stock_availability;
 
 import com.example.forecasting_stock_availability.DB.InventoryRecordsManager;
+import com.example.forecasting_stock_availability.DB.InventoryRecordsRepository;
 import com.example.forecasting_stock_availability.data_client.HolidayDataInterface;
 import com.example.forecasting_stock_availability.shop.ShopsDataLoaderInterface;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,9 @@ public class ForecastingStockAvailabilityApplication extends SpringBootServletIn
 
     @Autowired
     private ShopsDataLoaderInterface shopsApi;
+    @Autowired
+
+    InventoryRecordsRepository inventoryRecordsRepository;
 
     public static void main(String[] args) {
         SpringApplication.run(ForecastingStockAvailabilityApplication.class, args);
@@ -41,6 +45,12 @@ public class ForecastingStockAvailabilityApplication extends SpringBootServletIn
     @GetMapping("/hello3")
     public String hello3() {
         return shopsApi.loadData().toString();
+    }
+
+    @GetMapping("/test")
+    public String test() {
+
+        return inventoryRecordsRepository.findById("6939e903000941f34c3a92f4") + "";
     }
 
 
