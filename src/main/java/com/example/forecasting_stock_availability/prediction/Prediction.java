@@ -11,6 +11,7 @@ import lombok.NonNull;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,16 +28,9 @@ import java.util.*;
 @RestController
 @ConfigurationProperties(prefix = "prediction")
 public class Prediction {
-
-    // TODO shops api pryč - nahrávání CSV do mainu
-    // TODO ShopsEndpoints zmizí kvůli tomu že vznikne konfigurák
-    // TODO možná nová třída kvůli konfigu
-    // TODO DOKUMENT architektury
     // TODO okomentovat kód - dokumentace
-    // TODO upravit výpis predikce - přidat shopID a další informace.
+    // TODO DOKUMENT architektury
     // TODO Udělat prezentaci
-
-
 
     @Getter
     @Setter
@@ -82,7 +76,7 @@ public class Prediction {
     // date, shop, item
     // add unit of measure
     @GetMapping("/predict/{date}/{shop}/{item}")
-    public String predictDate(@PathVariable(value = "date") String date, @PathVariable(value = "shop") String shop, @PathVariable(value = "item") String item) {
+    public ResponseEntity<?> predictDate(@PathVariable(value = "date") String date, @PathVariable(value = "shop") String shop, @PathVariable(value = "item") String item) {
 
 
         SearchItemBean searchItemBean = new SearchItemBean();
@@ -95,11 +89,11 @@ public class Prediction {
 
 
         if (daysBetween < 0) {
-            return "Invalid date. Provide must not be in past";
+            return ResponseEntity.badRequest().body("Invalid date. Provide must not be in past");
         }
 
         if (daysBetween > 7) {
-            return "Cannot predict more than 7 days into the future";
+            return ResponseEntity.badRequest().body("Cannot predict more than 7 days into the future");
         }
 
         searchItemBean.setShopID(shop);
@@ -109,10 +103,16 @@ public class Prediction {
 
         try {
             int predictionResult = predict(searchItemBean, predictDate);
-            return "prediction = " + predictionResult;
+
+            Map<String, Object> json = new HashMap<>();
+            json.put("date", date);
+            json.put("shopID", shop);
+            json.put("itemID", item);
+            json.put("predicted", predictionResult);
+
+            return ResponseEntity.ok(json);
         } catch (RuntimeException e) {
-            System.out.println(e);
-            return "Not enough data found for prediction!" + e;
+            return ResponseEntity.badRequest().body("Not enough data found for prediction! " + e);
         }
 
     }

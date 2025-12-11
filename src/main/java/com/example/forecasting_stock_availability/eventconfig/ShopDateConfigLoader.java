@@ -1,7 +1,5 @@
 package com.example.forecasting_stock_availability.eventconfig;
 
-
-import com.example.forecasting_stock_availability.endpoins.ShopsEndpoints;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
@@ -13,7 +11,6 @@ import org.springframework.core.io.ClassPathResource;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Random;
 
 @Component
 
