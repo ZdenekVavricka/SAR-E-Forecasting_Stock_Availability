@@ -4,9 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Collections;
@@ -76,14 +74,6 @@ public class HolidayApi implements HolidayDataInterface {
 
         return getData(url);
     }
-
-    /**
-     * Returns information about interval of days starting from given date
-     *
-     * @param date - date in format YYYY-MM-DD
-     * @param interval - number of days from date
-     * @return List of DateObject
-     */
 
     /**
      * Returns information about an interval of days starting from the given date.
