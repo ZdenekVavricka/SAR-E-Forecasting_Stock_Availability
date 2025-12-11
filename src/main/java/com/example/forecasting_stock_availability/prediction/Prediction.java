@@ -3,9 +3,9 @@ package com.example.forecasting_stock_availability.prediction;
 import com.example.forecasting_stock_availability.DB.InventoryRecordsManager;
 import com.example.forecasting_stock_availability.data_client.DateObject;
 import com.example.forecasting_stock_availability.data_client.HolidayDataInterface;
+import com.example.forecasting_stock_availability.eventconfig.ShopDateConfigLoader;
 import com.example.forecasting_stock_availability.shop.InventoryRecord;
 import com.example.forecasting_stock_availability.shop.SearchItemBean;
-import com.example.forecasting_stock_availability.shop.ShopsDataLoaderInterface;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -22,22 +22,19 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
+
 @Component
 @RestController
 @ConfigurationProperties(prefix = "prediction")
 public class Prediction {
 
-
-
-    // TODO
-    // TODO konfigurák k eventům
-    // TODO nahrát do DB nějaké budoucí data pro predikci - restock
     // TODO shops api pryč - nahrávání CSV do mainu
     // TODO ShopsEndpoints zmizí kvůli tomu že vznikne konfigurák
     // TODO možná nová třída kvůli konfigu
     // TODO DOKUMENT architektury
-
-
+    // TODO okomentovat kód - dokumentace
+    // TODO upravit výpis predikce - přidat shopID a další informace.
+    // TODO Udělat prezentaci
 
 
 
@@ -65,6 +62,9 @@ public class Prediction {
     @Autowired
     private InventoryRecordsManager inventoryRecordsManager;
 
+    @Autowired
+    ShopDateConfigLoader shopDateConfigLoader;
+
     enum Events {
         DAY_OF_WEEK,
         HOLIDAYS,
@@ -78,8 +78,6 @@ public class Prediction {
     @Autowired
     private HolidayDataInterface holidayApi;
 
-    @Autowired
-    private ShopsDataLoaderInterface shopsApi;
 
     // date, shop, item
     // add unit of measure
@@ -121,10 +119,7 @@ public class Prediction {
 
     private int predict(SearchItemBean search, LocalDate predictDate) {
         // get data using search bean
-        //List<InventoryRecord> inventoryRecords = shopsApi.getInventoryRecords(search);
         List<InventoryRecord> inventoryRecords = inventoryRecordsManager.findByShopItemStartDateEndDate(search.getShopID(), search.getItemID(), search.getDataStartDate(), search.getDataEndDate());
-
-        System.out.println("inventoryRecordsSize: " + inventoryRecords.size());
 
         if (inventoryRecords.isEmpty()) {
             throw new RuntimeException("No inventory records found");
@@ -150,8 +145,7 @@ public class Prediction {
         HashMap<String, Boolean> holidaysAfter = getDayAfterHolidays(possibleHolidays);
 
         /*date, true - if there is an event during the date*/
-        HashMap<String, Boolean> events = shopsApi.hasEventDuringDate(search.getShopID(), currentDate.toString(), daysBetween + 1);
-//        int currentStock = shopsApi.getCurrentDayItemStock(currentStoctSearchBean);
+        HashMap<String, Boolean> events = shopDateConfigLoader.hasEventDuringDate(search.getShopID(), currentDate.toString(), daysBetween + 1);
 
         InventoryRecord foundById = inventoryRecordsManager.findById(currentDate + "-" + search.getShopID() + "-" + search.getItemID());
 
@@ -213,7 +207,7 @@ public class Prediction {
 
             int finalAverageForDay = tempAverageCount / listAveragesToMakeAverageFrom.size();
 
-            currentStock += inventoryRecordsManager.getItemsRestockCount(search.getShopID(),search.getItemID(),(ChronoUnit.DAYS.addTo(currentDate, i + 1).toString()));
+            currentStock += inventoryRecordsManager.getItemsRestockCount((ChronoUnit.DAYS.addTo(currentDate, i + 1).toString()),search.getShopID(),search.getItemID());
 
             currentStock -= finalAverageForDay;
         }

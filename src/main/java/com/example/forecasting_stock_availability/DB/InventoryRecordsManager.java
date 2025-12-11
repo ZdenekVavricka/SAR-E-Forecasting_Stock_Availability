@@ -31,8 +31,9 @@ public class InventoryRecordsManager {
         return inventoryRecordsRepository.findById(s).orElse(null);
     }
 
-    public int getItemsRestockCount(String shopID, String itemID, String date) {
-        InventoryRecord inventoryRecord = inventoryRecordsRepository.findById(shopID + "-" + itemID + "-" + date).orElse(null);
+    public int getItemsRestockCount(String date, String shopID, String itemID) {
+
+        InventoryRecord inventoryRecord = inventoryRecordsRepository.findById(date + "-" + shopID + "-" + itemID).orElse(null);
         if (inventoryRecord == null) {
             return 0;
         }

@@ -22,7 +22,7 @@ public class UploadDataEndpoint {
     InventoryRecordsManager inventoryRecordsManager;
 
 
-    //curl -X PUT "http://localhost:8080/upload"   -H "Content-Type: application/json"   --data "@example_data.json"
+    //curl -X PUT "http://localhost:8080/upload" -H "Content-Type: application/json"   --data "@example_data_restock.json"
     @PutMapping("/upload")
     public ResponseEntity<?> uploadJson(@RequestBody List<InventoryRecord> inventoryRecords) {
 
@@ -53,9 +53,8 @@ public class UploadDataEndpoint {
                         .body("UnitType is missing for record: " + inventoryRecord);
             }
 
-
-
-            inventoryRecord.setRecordID(inventoryRecord.getDate() + "-" + inventoryRecord.getShopID() + "-" + inventoryRecord.getItemID());
+            String newID = inventoryRecord.getDate() + "-" + inventoryRecord.getShopID() + "-" + inventoryRecord.getItemID();
+            inventoryRecord.setRecordID(newID);
         }
 
         inventoryRecordsManager.saveInventoryRecords(inventoryRecords);
