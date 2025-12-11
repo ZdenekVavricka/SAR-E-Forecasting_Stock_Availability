@@ -14,15 +14,29 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 
 
+/**
+ * REST endpoint for uploading inventory records in bulk as JSON.
+ */
 @Component
 @RestController
 public class UploadDataEndpoint {
 
+    /**
+     * Service managing persistence of inventory records.
+     */
     @Autowired
     InventoryRecordsManager inventoryRecordsManager;
 
 
-    //curl -X PUT "http://localhost:8080/upload" -H "Content-Type: application/json"   --data "@example_data_restock.json"
+    /**
+     * Uploads a list of inventory records. Performs basic validation and assigns composed IDs.
+     *
+     * <p>Example curl:
+     * curl -X PUT "http://localhost:8080/upload" -H "Content-Type: application/json" --data "@example_data_restock.json"
+     *
+     * @param inventoryRecords list of records to upload
+     * @return HTTP 200 on success with count, or 400 with validation error message
+     */
     @PutMapping("/upload")
     public ResponseEntity<?> uploadJson(@RequestBody List<InventoryRecord> inventoryRecords) {
 
@@ -63,6 +77,12 @@ public class UploadDataEndpoint {
     }
 
 
+    /**
+     * Validates ISO date format (YYYY-MM-DD).
+     *
+     * @param dateStr date string to validate
+     * @return true if valid ISO date, false otherwise
+     */
     public boolean isValidDate(String dateStr) {
         try {
             LocalDate.parse(dateStr);

@@ -24,41 +24,57 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 
+/**
+ * REST controller and component that provides stock level predictions based on
+ * historical sales and calendar/event features.
+ *
+ * <p>Prediction is influenced by the following feature groups, each weighted by a configurable multiplier:
+ * day of week, months, quarters, public holidays (the day itself, the day before, the day after), and custom events.
+ */
 @Component
 @RestController
 @ConfigurationProperties(prefix = "prediction")
 public class Prediction {
-    // TODO okomentovat kód - dokumentace
-    // TODO DOKUMENT architektury
-    // TODO Udělat prezentaci
 
+    /** Multiplier applied to day-of-week average sales. */
     @Getter
     @Setter
     private double dayOfWeekMultiplier;
+    /** Multiplier applied to public holiday day average sales. */
     @Getter
     @Setter
     private double holidaysMultiplier;
+    /** Multiplier applied to quarter average sales. */
     @Getter
     @Setter
     private double quartersMultiplier;
+    /** Multiplier applied to month average sales. */
     @Getter
     @Setter
     private double monthsMultiplier;
+    /** Multiplier applied to the day before holiday average sales. */
     @Getter
     @Setter
     private double holidaysBeforeMultiplier;
+    /** Multiplier applied to the day after holiday average sales. */
     @Getter
     @Setter
     private double holidaysAfterMultiplier;
+    /** Multiplier applied to custom event day average sales. */
     @Getter
     @Setter
     private double eventMultiplier;
+    /** Access to inventory records storage. */
     @Autowired
     private InventoryRecordsManager inventoryRecordsManager;
 
+    /** Provides shop-specific custom event dates (e.g., promotions). */
     @Autowired
     ShopDateConfigLoader shopDateConfigLoader;
 
+    /**
+     * Types of features considered for averages and prediction.
+     */
     enum Events {
         DAY_OF_WEEK,
         HOLIDAYS,
@@ -69,12 +85,18 @@ public class Prediction {
         EVENT
     }
 
+    /** Client used to fetch public holiday information. */
     @Autowired
     private HolidayDataInterface holidayApi;
 
-
-    // date, shop, item
-    // add unit of measure
+    /**
+     * Predicts the stock level for a given shop and item on a given future date (up to 7 days ahead).
+     *
+     * @param date target date in format YYYY-MM-DD (must be today or in the next 7 days)
+     * @param shop shop identifier
+     * @param item item identifier
+     * @return JSON body with input echo and predicted stock value or HTTP 400 with error
+     */
     @GetMapping("/predict/{date}/{shop}/{item}")
     public ResponseEntity<?> predictDate(@PathVariable(value = "date") String date, @PathVariable(value = "shop") String shop, @PathVariable(value = "item") String item) {
 
@@ -117,6 +139,15 @@ public class Prediction {
 
     }
 
+    /**
+     * Core prediction routine. Computes feature-based averages and simulates stock changes day by day
+     * from today to the target prediction date using restocks and estimated sales.
+     *
+     * @param search       search bean providing shop, item, and historical window
+     * @param predictDate  target prediction date
+     * @return predicted stock on the target date
+     * @throws RuntimeException when not enough data is available
+     */
     private int predict(SearchItemBean search, LocalDate predictDate) {
         // get data using search bean
         List<InventoryRecord> inventoryRecords = inventoryRecordsManager.findByShopItemStartDateEndDate(search.getShopID(), search.getItemID(), search.getDataStartDate(), search.getDataEndDate());
@@ -215,6 +246,12 @@ public class Prediction {
         return currentStock;
     }
 
+    /**
+     * Marks dates that are the day before a public holiday in the provided sequence of dates.
+     *
+     * @param allDates ordered list of dates
+     * @return map of date string to true when the date is the day before a holiday
+     */
     private HashMap<String, Boolean> getDayBeforeHolidays(List<DateObject> allDates) {
         HashMap<String, Boolean> daysWeDontWantToUse = new HashMap<>();
         for (int i = 0; i < allDates.size(); i++) {
@@ -228,6 +265,12 @@ public class Prediction {
         return daysWeDontWantToUse;
     }
 
+    /**
+     * Marks dates that are the day after a public holiday in the provided sequence of dates.
+     *
+     * @param allDates ordered list of dates
+     * @return map of date string to true when the date is the day after a holiday
+     */
     private HashMap<String, Boolean> getDayAfterHolidays(List<DateObject> allDates) {
         HashMap<String, Boolean> daysWeDontWantToUse = new HashMap<>();
         for (int i = 0; i < allDates.size(); i++) {
@@ -241,10 +284,15 @@ public class Prediction {
         return daysWeDontWantToUse;
     }
 
+    /**
+     * Marks dates that are public holidays in the provided sequence of dates.
+     *
+     * @param allDates ordered list of dates
+     * @return map of date string to true when the date is a holiday
+     */
     private HashMap<String, Boolean> getHolidaysOnly(List<DateObject> allDates) {
         HashMap<String, Boolean> daysWeDontWantToUse = new HashMap<>();
-        for (int i = 0; i < allDates.size(); i++) {
-            DateObject dateObject = allDates.get(i);
+        for (DateObject dateObject : allDates) {
             if (dateObject.getHoliday()) {
                 daysWeDontWantToUse.put(dateObject.getDate(), true);
             }
@@ -253,7 +301,11 @@ public class Prediction {
     }
 
     /**
-     * inventoryRecords - must be for sepcific item and shop
+     * Computes average sales grouped by the specified event type.
+     *
+     * @param inventoryRecords records for a specific item and shop
+     * @param event            grouping event
+     * @return map of bucket index to average sold items
      */
     private HashMap<Integer, Integer> boxify(List<InventoryRecord> inventoryRecords, @NonNull Prediction.Events event) {
 
@@ -270,6 +322,12 @@ public class Prediction {
     }
 
 
+    /**
+     * Calculates average sold items per day of week (0=Mon...6=Sun).
+     *
+     * @param inventoryRecords input records
+     * @return map day-of-week -> average sold
+     */
     private HashMap<Integer, Integer> calcAveragesByWeek(List<InventoryRecord> inventoryRecords) {
         HashMap<Integer, List<InventoryRecord>> weeksInventory = new HashMap<>();
         HashMap<Integer, Integer> weeksAverages = new HashMap<>();
@@ -302,6 +360,12 @@ public class Prediction {
         return weeksAverages;
     }
 
+    /**
+     * Calculates average sold items for public holidays.
+     *
+     * @param inventoryRecords input records
+     * @return map with a single key 0 -> average sold on holidays
+     */
     private HashMap<Integer, Integer> calcAveragesByHolidays(List<InventoryRecord> inventoryRecords) {
         HashMap<Integer, Integer> holidaysAverages = new HashMap<>();
 
@@ -341,6 +405,12 @@ public class Prediction {
         return holidaysAverages;
     }
 
+    /**
+     * Calculates average sold items for the day before public holidays.
+     *
+     * @param inventoryRecords input records
+     * @return map with a single key 0 -> average sold on days before holidays
+     */
     private HashMap<Integer, Integer> calcAveragesByHolidaysBefore(List<InventoryRecord> inventoryRecords) {
         HashMap<Integer, Integer> holidaysBeforeAverages = new HashMap<>();
 
@@ -380,6 +450,12 @@ public class Prediction {
         return holidaysBeforeAverages;
     }
 
+    /**
+     * Calculates average sold items for the day after public holidays.
+     *
+     * @param inventoryRecords input records
+     * @return map with a single key 0 -> average sold on days after holidays
+     */
     private HashMap<Integer, Integer> calcAveragesByHolidaysAfter(List<InventoryRecord> inventoryRecords) {
         HashMap<Integer, Integer> holidaysAfterAverages = new HashMap<>();
 
@@ -419,6 +495,12 @@ public class Prediction {
         return holidaysAfterAverages;
     }
 
+    /**
+     * Calculates average sold items per quarter (0..3).
+     *
+     * @param inventoryRecords input records
+     * @return map quarter -> average sold
+     */
     private HashMap<Integer, Integer> calcAveragesByQuarters(List<InventoryRecord> inventoryRecords) {
         HashMap<Integer, List<InventoryRecord>> monthsInventory = new HashMap<>();
         HashMap<Integer, List<InventoryRecord>> quartersInventory = new HashMap<>();
@@ -469,6 +551,12 @@ public class Prediction {
         return quartersAverages;
     }
 
+    /**
+     * Calculates average sold items per month (0...11).
+     *
+     * @param inventoryRecords input records
+     * @return map month -> average sold
+     */
     private HashMap<Integer, Integer> calcAveragesByMonths(List<InventoryRecord> inventoryRecords) {
         HashMap<Integer, List<InventoryRecord>> monthsInventory = new HashMap<>();
         HashMap<Integer, Integer> monthsAverages = new HashMap<>();
@@ -501,6 +589,12 @@ public class Prediction {
         return monthsAverages;
     }
 
+    /**
+     * Calculates average sold items for custom events flagged on records.
+     *
+     * @param inventoryRecords input records
+     * @return map with a single key 0 -> average sold on custom event days
+     */
     private HashMap<Integer, Integer> calcAveragesByEvent(List<InventoryRecord> inventoryRecords) {
         HashMap<Integer, Integer> eventAverages = new HashMap<>();
 

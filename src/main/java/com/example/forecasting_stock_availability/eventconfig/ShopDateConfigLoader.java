@@ -12,20 +12,33 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 
+/**
+ * Loads and provides access to shop event date configurations from classpath JSON.
+ */
 @Component
-
 public class ShopDateConfigLoader {
 
+    /**
+     * Jackson mapper used to parse configuration JSON.
+     */
     private final ObjectMapper mapper = new ObjectMapper();
+    /**
+     * Loaded configuration per shop with sorted event dates.
+     */
     @Setter
     @Getter
     private List<ShopDateConfig> shopsConfigs;
 
+    /**
+     * Loads configurations from the classpath resource {@code events_configuration.json} and sorts dates per shop.
+     *
+     * @throws Exception when resource cannot be read or parsed
+     */
     @PostConstruct
     public void load() throws Exception {
         ClassPathResource resource = new ClassPathResource("events_configuration.json");
         shopsConfigs = mapper.readValue(resource.getInputStream(),
-                new TypeReference<List<ShopDateConfig>>() {
+                new TypeReference<>() {
                 });
 
         // Sort the dates for each shop
@@ -39,6 +52,14 @@ public class ShopDateConfigLoader {
         });
     }
 
+    /**
+     * Determines which event dates for a shop fall within the interval [date, date+interval].
+     *
+     * @param shopID   shop identifier
+     * @param date     start date (YYYY-MM-DD)
+     * @param interval number of days to include (inclusive end)
+     * @return map where keys are event dates and values are {@code true} when within interval
+     */
     public HashMap<String, Boolean> hasEventDuringDate(String shopID, String date, int interval) {
         HashMap<String, Boolean> map = new HashMap<>();
 

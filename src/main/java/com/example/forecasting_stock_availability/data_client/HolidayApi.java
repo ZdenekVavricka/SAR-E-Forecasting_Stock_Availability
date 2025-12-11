@@ -12,23 +12,37 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Client for retrieving holiday and calendar data from an external API.
+ */
 @Component
 public class HolidayApi implements HolidayDataInterface {
 
+    /**
+     * Base URL of the holidays API (configured via properties: holidays.getHolidays).
+     */
     @Value("${holidays.getHolidays}")
     private String API_URL;
+    /** Rest template used for HTTP requests. */
     private final RestTemplate restTemplate;
+    /** Jackson object mapper for JSON parsing. */
     private final ObjectMapper objectMapper;
 
+    /**
+     * Constructs the API client with the provided {@link ObjectMapper}.
+     *
+     * @param objectMapper mapper used to deserialize JSON responses
+     */
     public HolidayApi(ObjectMapper objectMapper) {
         this.restTemplate = new RestTemplate();
         this.objectMapper = objectMapper;
     }
 
+
     /**
-     * Only returns information about current day
+     * Returns information about the current day.
      *
-     * @return List of DateObject
+     * @return list of {@link DateObject} entries
      */
     public List<DateObject> getDay() {
         String url = API_URL + "day";
@@ -36,11 +50,12 @@ public class HolidayApi implements HolidayDataInterface {
         return getData(url);
     }
 
+
     /**
-     * Only returns information about asked date
+     * Returns information about the given date.
      *
-     * @param date - date in format YYYY-MM-DD
-     * @return List of DateObject
+     * @param date date in format YYYY-MM-DD
+     * @return list of {@link DateObject} entries
      */
     public List<DateObject> getDay(String date) {
         String url = API_URL + "day/" + date;
@@ -48,10 +63,12 @@ public class HolidayApi implements HolidayDataInterface {
         return getData(url);
     }
 
-    /***
-     * Returns information about next week starting from given date
-     * @param date - date in format YYYY-MM-DD
-     * @return List of DateObject
+
+    /**
+     * Returns information about the week starting from the given date.
+     *
+     * @param date date in format YYYY-MM-DD
+     * @return list of {@link DateObject} entries
      */
     public List<DateObject> getWeek(String date) {
 
@@ -68,16 +85,23 @@ public class HolidayApi implements HolidayDataInterface {
      * @return List of DateObject
      */
 
+    /**
+     * Returns information about an interval of days starting from the given date.
+     *
+     * @param date     date in format YYYY-MM-DD
+     * @param interval number of days from the start date
+     * @return list of {@link DateObject} entries
+     */
     public List<DateObject> getDateInterval(String date, int interval) {
         String url = API_URL + "day/" + date + "/interval/" + interval;
         return getData(url);
     }
 
     /**
-     * Returns acquired data from svatkyapi.cz
+     * Executes the request and parses the JSON response into {@link DateObject} items.
      *
-     * @param uri - url of Endpoint
-     * @return List of DataObject
+     * @param uri endpoint URL
+     * @return list of {@link DateObject}
      */
     private List<DateObject> getData(String uri) {
 
@@ -94,7 +118,6 @@ public class HolidayApi implements HolidayDataInterface {
                 return List.of(obj);
             }
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
             return Collections.emptyList();
         }
     }

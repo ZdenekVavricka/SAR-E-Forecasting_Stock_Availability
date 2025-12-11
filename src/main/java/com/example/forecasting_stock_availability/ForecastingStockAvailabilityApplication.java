@@ -1,7 +1,6 @@
 package com.example.forecasting_stock_availability;
 
 import com.example.forecasting_stock_availability.DB.InventoryRecordsRepository;
-import com.example.forecasting_stock_availability.eventconfig.ShopDateConfigLoader;
 import com.example.forecasting_stock_availability.shop.InventoryRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
@@ -9,7 +8,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
@@ -20,41 +18,54 @@ import java.util.ArrayList;
 import java.util.List;
 
 
+/**
+ * Spring Boot entry point and simple test endpoints for the Forecasting Stock Availability service.
+ *
+ * <p>Note: This class contains a few helper endpoints used for manual testing (CSV upload, etc.).
+ */
 @SpringBootApplication
 @RestController
 @EnableScheduling
 public class ForecastingStockAvailabilityApplication extends SpringBootServletInitializer {
 
-
-
-
+    /**
+     * Repository for persisting and querying {@link com.example.forecasting_stock_availability.shop.InventoryRecord} documents.
+     */
     @Autowired
     InventoryRecordsRepository inventoryRecordsRepository;
 
-    @Autowired
-    ShopDateConfigLoader loader;
-
+    /**
+     * In-memory cache of inventory records loaded from CSV (testing only).
+     */
     public static List<InventoryRecord> inventoryRecords = null;
 
+    /**
+     * Application entry point.
+     *
+     * @param args command-line arguments
+     */
     public static void main(String[] args) {
         SpringApplication.run(ForecastingStockAvailabilityApplication.class, args);
     }
 
-    @GetMapping("/hello")
-    public String hello(@RequestParam(value = "name", defaultValue = "World") String name) {
-        return "Hello " + name;
-    }
 
 
+
+    /**
+     * Deletes all inventory records from the database (testing only).
+     *
+     * @return confirmation text
+     */
     @GetMapping("/delete-all")
     public String deleteAll() {
         inventoryRecordsRepository.deleteAll();
-
         return "deleted all DB";
     }
 
     /**
-     * THIS IS ONLY FOR TESTING. IT UPLOADS CVS FROM DATA FOLDER
+     * Loads sample CSV from the local data folder and saves it to the database (testing only).
+     *
+     * @return confirmation text with basic progress
      */
     @GetMapping("/upload-csv")
     public String uploadCSV() {
@@ -66,15 +77,14 @@ public class ForecastingStockAvailabilityApplication extends SpringBootServletIn
         return "uploaded CSV into DB";
     }
 
-    @GetMapping("/test")
-    public String shopDates() {
 
-        return loader.getShopsConfigs() + "";
-    }
-
-
-    /// ///for CSV LOADING INTO DB - TESTING PURPOSES
-
+    /**
+     * Maps a CSV file represented as a list of lines into a list of {@link InventoryRecord} objects.
+     * The first line is assumed to be a header and is skipped (testing only).
+     *
+     * @param list lines of a CSV file
+     * @return list of mapped inventory records
+     */
     private static List<InventoryRecord> inventoryRecordMapper(List<String> list) {
         List<InventoryRecord> inventory = new ArrayList<>();
 
@@ -100,10 +110,15 @@ public class ForecastingStockAvailabilityApplication extends SpringBootServletIn
     }
 
 
+    /**
+     * Loads and caches inventory records from the CSV file in the data folder.
+     * Subsequent calls return the cached list (testing only).
+     *
+     * @return list of inventory records
+     */
     private static List<InventoryRecord> loadData() {
 
         if (inventoryRecords == null) {
-            System.out.println("LOADING");
 
             List<String> list = null;
 
@@ -112,11 +127,13 @@ public class ForecastingStockAvailabilityApplication extends SpringBootServletIn
             } catch (IOException e) {
                 e.getStackTrace();
             }
-
-            inventoryRecords = inventoryRecordMapper(list);
+            if (list == null){
+                inventoryRecords = new ArrayList<>();
+            }else {
+                inventoryRecords = inventoryRecordMapper(list);
+            }
         }
 
-        System.out.println("CASHED");
 
         return inventoryRecords;
     }
