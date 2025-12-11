@@ -27,12 +27,6 @@ public class UploadDataEndpoint {
     public ResponseEntity<?> uploadJson(@RequestBody List<InventoryRecord> inventoryRecords) {
 
         for (InventoryRecord inventoryRecord : inventoryRecords) {
-
-            if (inventoryRecord.getRecordID() == null) {
-                return ResponseEntity.badRequest()
-                        .body("recordID is missing for record: " + inventoryRecord);
-            }
-
             if (inventoryRecord.getDate() == null) {
                 return ResponseEntity.badRequest()
                         .body("Date is missing for record: " + inventoryRecord);
@@ -53,22 +47,21 @@ public class UploadDataEndpoint {
                         .body("ItemID is missing for record: " + inventoryRecord);
             }
 
-            if (inventoryRecord.getName() == null) {
-                return ResponseEntity.badRequest()
-                        .body("Name is missing for record: " + inventoryRecord);
-            }
 
-            if (inventoryRecord.getUnitType() == null) {
+            if (inventoryRecord.getDuringEvent() == null) {
                 return ResponseEntity.badRequest()
                         .body("UnitType is missing for record: " + inventoryRecord);
             }
+
+
+
+            inventoryRecord.setRecordID(inventoryRecord.getDate() + "-" + inventoryRecord.getShopID() + "-" + inventoryRecord.getItemID());
         }
 
         inventoryRecordsManager.saveInventoryRecords(inventoryRecords);
 
         return ResponseEntity.ok("Uploaded: " + inventoryRecords.size() + " records.");
     }
-
 
 
     public boolean isValidDate(String dateStr) {

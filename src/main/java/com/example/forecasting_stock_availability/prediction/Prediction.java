@@ -1,5 +1,6 @@
 package com.example.forecasting_stock_availability.prediction;
 
+import com.example.forecasting_stock_availability.DB.InventoryRecordsManager;
 import com.example.forecasting_stock_availability.data_client.DateObject;
 import com.example.forecasting_stock_availability.data_client.HolidayDataInterface;
 import com.example.forecasting_stock_availability.shop.InventoryRecord;
@@ -26,6 +27,20 @@ import java.util.*;
 @ConfigurationProperties(prefix = "prediction")
 public class Prediction {
 
+
+
+    // TODO
+    // TODO konfigurák k eventům
+    // TODO nahrát do DB nějaké budoucí data pro predikci - restock
+    // TODO shops api pryč - nahrávání CSV do mainu
+    // TODO ShopsEndpoints zmizí kvůli tomu že vznikne konfigurák
+    // TODO možná nová třída kvůli konfigu
+    // TODO DOKUMENT architektury
+
+
+
+
+
     @Getter
     @Setter
     private double dayOfWeekMultiplier;
@@ -47,6 +62,8 @@ public class Prediction {
     @Getter
     @Setter
     private double eventMultiplier;
+    @Autowired
+    private InventoryRecordsManager inventoryRecordsManager;
 
     enum Events {
         DAY_OF_WEEK,
@@ -104,7 +121,8 @@ public class Prediction {
 
     private int predict(SearchItemBean search, LocalDate predictDate) {
         // get data using search bean
-        List<InventoryRecord> inventoryRecords = shopsApi.getInventoryRecords(search);
+        //List<InventoryRecord> inventoryRecords = shopsApi.getInventoryRecords(search);
+        List<InventoryRecord> inventoryRecords = inventoryRecordsManager.findByShopItemStartDateEndDate(search.getShopID(), search.getItemID(), search.getDataStartDate(), search.getDataEndDate());
 
         System.out.println("inventoryRecordsSize: " + inventoryRecords.size());
 
@@ -133,9 +151,16 @@ public class Prediction {
 
         /*date, true - if there is an event during the date*/
         HashMap<String, Boolean> events = shopsApi.hasEventDuringDate(search.getShopID(), currentDate.toString(), daysBetween + 1);
+//        int currentStock = shopsApi.getCurrentDayItemStock(currentStoctSearchBean);
 
-        int currentStock = shopsApi.getCurrentDayItemStock(currentStoctSearchBean);
+        InventoryRecord foundById = inventoryRecordsManager.findById(currentDate + "-" + search.getShopID() + "-" + search.getItemID());
 
+        int currentStock;
+        if (foundById == null) {
+            currentStock = 0;
+        } else {
+            currentStock = foundById.getCurrentLevel();
+        }
 
         //prediction for the future
         for (int i = 0; i <= daysBetween; i++) {
@@ -188,13 +213,7 @@ public class Prediction {
 
             int finalAverageForDay = tempAverageCount / listAveragesToMakeAverageFrom.size();
 
-            //restock
-            SearchItemBean restockSearchBean = new SearchItemBean();
-            restockSearchBean.setShopID(search.getShopID());
-            restockSearchBean.setItemID(search.getItemID());
-            restockSearchBean.setPredictDate(ChronoUnit.DAYS.addTo(currentDate, i + 1).toString());
-
-            currentStock += shopsApi.getItemsRestockCount(restockSearchBean);
+            currentStock += inventoryRecordsManager.getItemsRestockCount(search.getShopID(),search.getItemID(),(ChronoUnit.DAYS.addTo(currentDate, i + 1).toString()));
 
             currentStock -= finalAverageForDay;
         }

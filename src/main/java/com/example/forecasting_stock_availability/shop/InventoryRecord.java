@@ -35,6 +35,8 @@ public class InventoryRecord {
      */
     private String duringEvent;
 
+    private int restockCount;
+
     public int getStartingStock(){
         return currentLevel + soldItems;
     }
