@@ -1,4 +1,4 @@
-# System Architecture Document: SAR‑E Forecasting Stock Availability
+# Forecasting Stock Availability
 
 ## Overview
 
