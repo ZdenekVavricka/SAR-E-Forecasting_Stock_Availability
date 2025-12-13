@@ -6,20 +6,23 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.5.7</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <relativePath/>
     </parent>
     <groupId>com.example</groupId>
-    <artifactId>forecasting_stock_availability</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <artifactId>forecastingStockAvailability</artifactId>
+    <version>1.0.0</version>
     <name>forecasting_stock_availability</name>
-    <description>forecasting_stock_availability</description>
+    <description>forecastingStockAvailability</description>
     <url/>
+
     <licenses>
         <license/>
     </licenses>
+
     <developers>
         <developer/>
     </developers>
+
     <scm>
         <connection/>
         <developerConnection/>
@@ -41,7 +44,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
-<!--            <scope>test</scope>-->
         </dependency>
 
         <dependency>
@@ -84,8 +86,6 @@
                 </configuration>
             </plugin>
         </plugins>
-
-
     </build>
 
 </project>

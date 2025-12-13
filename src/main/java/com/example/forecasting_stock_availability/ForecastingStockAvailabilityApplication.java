@@ -6,15 +6,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 
@@ -47,8 +52,6 @@ public class ForecastingStockAvailabilityApplication extends SpringBootServletIn
     public static void main(String[] args) {
         SpringApplication.run(ForecastingStockAvailabilityApplication.class, args);
     }
-
-
 
 
     /**
@@ -123,20 +126,26 @@ public class ForecastingStockAvailabilityApplication extends SpringBootServletIn
             List<String> list = null;
 
             try {
-                list = Files.readAllLines(Path.of("./data/retail_store_inventory.csv"), StandardCharsets.UTF_8);
+                ClassPathResource resource = new ClassPathResource("retail_store_inventory.csv");
+
+                try (InputStream is = resource.getInputStream()) {
+                    list = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8)).lines().toList();
+                }
+
             } catch (IOException e) {
-                e.getStackTrace();
-            }
-            if (list == null){
+                System.out.println("Failed to load inventory CSV");
                 inventoryRecords = new ArrayList<>();
-            }else {
+            }
+
+
+            if (list == null) {
+                inventoryRecords = new ArrayList<>();
+            }else{
                 inventoryRecords = inventoryRecordMapper(list);
             }
-        }
 
+        }
 
         return inventoryRecords;
     }
-
-
 }
