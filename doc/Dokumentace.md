@@ -1,5 +1,7 @@
 # Forecasting Stock Availability
 
+---
+
 ## Objectives
 
 In retail, it is often necessary to estimate how much of a specific product will be available in a particular store on a
@@ -23,6 +25,8 @@ Objectives
     - Consider factors such as data structure, size and query complexity.
     - Provide a recommendation with reasoning
 - Deliver a working PoC implementation with simulated or static data.
+
+---
 
 ## Technologies
 
@@ -52,7 +56,6 @@ being fast, reliable, and easy to use, and is a core part of the LAMP stack.
 - Less flexible for complex queries
 - Some features require paid editions
 - Weaker support for complex transactions
-
 
 #### PostgreSQL
 
@@ -119,14 +122,19 @@ offline-first and distributed systems.
 After evaluating different databases, **MongoDB** was chosen for this PoC
 for the following reasons:
 
-- **Scalability**: MongoDB's horizontal scaling capabilities are well-suited for large volumes of time-series inventory data.
+- **Scalability**: MongoDB's horizontal scaling capabilities are well-suited for large volumes of time-series inventory
+  data.
 - **Performance**: High-speed writes for bulk data uploads.
 - **Integration**: Easy integration with Spring Boot via Spring Data.
 - **Experience**: We have prior experience with MongoDB, which made it a good solution for this project.
 
+---
+
 ### External APIs
 
 - **Holiday API**: Used to fetch public holiday data, which significantly impacts retail sales patterns.
+
+---
 
 ## Algorithm
 
@@ -152,18 +160,144 @@ to the target date.
       `EstimatedSales(t) = (DayOfTheWeekAverage(t) * DayOfTheWeekMultiplier) + (MonthAverage(t) * MonthMultiplaier) + ... (EventAverage(t) * EventMultilier)`
 5. **Constraints**: Predictions are limited to a 7-day future window to maintain accuracy.
 
+---
+
 ## Architecture
 
 ![Architecture](../img/architecture.png)
 
 ### System Components
 
-TODO?
+#### **Client**
+   Purpose:
+   - Represents the end user or external consumer of the system.
+
+   Responsibilities:
+   - Initiates requests to place orders or check product availability.
+   - Interacts only with the Ordering System, not with internal services directly.
+
+   Interactions:
+   - Sends requests to the Ordering System (e.g., product order or availability checks).
+
+---
+
+#### **Forecasting Stock Availability**
+   Purpose:
+   - Central service responsible for predicting future stock availability.
+
+   Responsibilities:
+   - Collects data from shops, restocking systems, and external factors.
+   - Runs forecasting logic.
+   - Provides availability predictions to the Ordering System.
+
+   Interactions:
+   - Receives shop data via PUT /upload from:
+     - Shops API
+     - Restock API
+   - Requests holiday information from the Holiday API using GET /interval.
+   - Reads from and writes to MongoDB.
+   - Serves prediction results to the Ordering System via GET /predict.
+
+---
+
+#### **Shop System**
+   Purpose:
+   - Manages operational shop-related data.
+
+   Responsibilities:
+   - Collects and maintains shop inventory and restocking information.
+   - Acts as a source of truth for raw operational data.
+
+   Subcomponents:
+   - Shops API
+   - Restock API
+   - Ordering System
+
+   Interactions:
+   - Shops API → Forecasting Stock Availability
+     - Sends current shop and inventory data via PUT /upload.
+   - Restock API → Forecasting Stock Availability
+     - Sends restocking schedules and quantities via PUT /upload.
+   - Ordering System → Forecasting Stock Availability
+     - Requests stock availability predictions via GET /predict.
+   - Ordering System ← Forecasting Stock Availability
+     - Receives forecasted availability results to support order decisions.
+
+---
+
+#### **Shops API**
+   Purpose:
+   - Provides current shop and inventory-related data.
+
+   Responsibilities:
+   - Exposes shop stock levels and operational data.
+   - Pushes updates to the forecasting service.
+
+   Interactions:
+   - Sends inventory data to Forecasting Stock Availability via PUT /upload.
+
+---
+
+#### **Ordering System**
+   Purpose:
+   - Acts as the main entry point for order-related operations.
+
+   Responsibilities:
+   - Receives client requests.
+   - Requests stock availability predictions before confirming an order.
+   - Uses forecast results to decide whether an order can be accepted or delayed.
+
+   Interactions:
+   - Calls Forecasting Stock Availability using GET /predict.
+   - Returns prediction result.
+
+---
+
+#### **Restock API**
+   Purpose:
+   - Provides information about restocking events.
+
+   Responsibilities:
+   - Tracks restocking schedules, quantities, and deliveries.
+   - Ensures forecasting logic is aware of incoming stock.
+
+   Interactions:
+   - Sends restocking data to Forecasting Stock Availability via PUT /upload.
+
+---
+
+#### **Holiday API**
+   Purpose:
+   - Supplies external calendar and holiday information.
+
+   Responsibilities:
+   - Provides holiday intervals that may affect demand patterns.
+   - Helps improve prediction accuracy by accounting for seasonal effects.
+
+   Interactions:
+   - Responds to Forecasting Stock Availability requests via GET /interval.
+
+---
+
+#### **MongoDB**
+   Purpose:
+   - Persistent data storage for the forecasting service.
+
+   Responsibilities:
+   - Stores historical inventory data.
+   - Stores future restock inventory data
+
+   Interactions:
+   - Read/write access by Forecasting Stock Availability.
+
+---
 
 ### API Endpoints
 
 - `GET /predict/{date}/{shopID}/{itemID}`: Returns the predicted stock level.
 - `PUT /upload`: Accepts a JSON list of `InventoryRecord` objects for bulk data ingestion.
+
+---
 
 ## Conclusion
 
