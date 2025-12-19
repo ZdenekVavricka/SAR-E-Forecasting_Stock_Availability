@@ -1,6 +1,5 @@
 # Forecasting Stock Availability
 
----
 
 ## Objectives
 
@@ -26,16 +25,12 @@ Objectives
     - Provide a recommendation with reasoning
 - Deliver a working PoC implementation with simulated or static data.
 
----
-
 ## Technologies
 
 ### Java & Spring Boot
 
 The service is built using **Java 17+** and **Spring Boot**, leveraging its robust ecosystem for REST APIs and data
 persistence.
-
----
 
 ### Considered DB
 
@@ -59,8 +54,6 @@ being fast, reliable, and easy to use, and is a core part of the LAMP stack.
 - Some features require paid editions
 - Weaker support for complex transactions
 
----
-
 #### PostgreSQL
 
 PostgreSQL is open-source object-relational database known for standards compliance, data integrity, and
@@ -80,8 +73,6 @@ advanced features. It is often chosen for complex, enterprise-grade systems.
 - Slightly slower for simple read-heavy workloads
 - More complex configuration
 - Higher resource usage than MySQL
-
----
 
 #### MongoDB
 
@@ -103,8 +94,6 @@ flexibility, and rapid development.
 - Higher memory usage
 - Eventual consistency in distributed setups
 
----
-
 #### CouchDB
 
 CouchDB is an open-source document database that uses JSON for documents, HTTP/REST for access, and is designed for
@@ -125,7 +114,6 @@ offline-first and distributed systems.
 - Smaller community
 - Not ideal for complex analytics
 
----
 
 ### Selected database: MongoDB
 
@@ -138,13 +126,9 @@ for the following reasons:
 - **Integration**: Easy integration with Spring Boot via Spring Data.
 - **Experience**: We have prior experience with MongoDB, which made it a good solution for this project.
 
----
-
-### External APIs
+## External APIs
 
 - **Holiday API**: Used to fetch public holiday data, which significantly impacts retail sales patterns.
-
----
 
 ## Algorithm
 
@@ -170,7 +154,6 @@ to the target date.
       `EstimatedSales(t) = (DayOfTheWeekAverage(t) * DayOfTheWeekMultiplier) + (MonthAverage(t) * MonthMultiplaier) + ... (EventAverage(t) * EventMultilier)`
 5. **Constraints**: Predictions are limited to a 7-day future window to maintain accuracy.
 
----
 
 ## Architecture
 
@@ -189,8 +172,6 @@ to the target date.
    Interactions:
    - Sends requests to the Ordering System (e.g., product order or availability checks).
 
----
-
 #### **Forecasting Stock Availability**
    Purpose:
    - Central service responsible for predicting future stock availability.
@@ -207,8 +188,6 @@ to the target date.
    - Requests holiday information from the Holiday API using GET /interval.
    - Reads from and writes to MongoDB.
    - Serves prediction results to the Ordering System via GET /predict.
-
----
 
 #### **Shop System**
    Purpose:
@@ -233,8 +212,6 @@ to the target date.
    - Ordering System ← Forecasting Stock Availability
      - Receives forecasted availability results to support order decisions.
 
----
-
 #### **Shops API**
    Purpose:
    - Provides current shop and inventory-related data.
@@ -245,8 +222,6 @@ to the target date.
 
    Interactions:
    - Sends inventory data to Forecasting Stock Availability via PUT /upload.
-
----
 
 #### **Ordering System**
    Purpose:
@@ -261,8 +236,6 @@ to the target date.
    - Calls Forecasting Stock Availability using GET /predict.
    - Returns prediction result.
 
----
-
 #### **Restock API**
    Purpose:
    - Provides information about restocking events.
@@ -273,8 +246,6 @@ to the target date.
 
    Interactions:
    - Sends restocking data to Forecasting Stock Availability via PUT /upload.
-
----
 
 #### **Holiday API**
    Purpose:
@@ -287,8 +258,6 @@ to the target date.
    Interactions:
    - Responds to Forecasting Stock Availability requests via GET /interval.
 
----
-
 #### **MongoDB**
    Purpose:
    - Persistent data storage for the forecasting service.
@@ -300,14 +269,10 @@ to the target date.
    Interactions:
    - Read/write access by Forecasting Stock Availability.
 
----
-
-### API Endpoints
+## API Endpoints
 
 - `GET /predict/{date}/{shopID}/{itemID}`: Returns the predicted stock level.
 - `PUT /upload`: Accepts a JSON list of inventory records.
-
----
 
 ## Conclusion
 
