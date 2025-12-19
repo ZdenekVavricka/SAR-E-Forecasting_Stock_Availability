@@ -35,6 +35,8 @@ Objectives
 The service is built using **Java 17+** and **Spring Boot**, leveraging its robust ecosystem for REST APIs and data
 persistence.
 
+---
+
 ### Considered DB
 
 #### MySQL
@@ -57,6 +59,8 @@ being fast, reliable, and easy to use, and is a core part of the LAMP stack.
 - Some features require paid editions
 - Weaker support for complex transactions
 
+---
+
 #### PostgreSQL
 
 PostgreSQL is open-source object-relational database known for standards compliance, data integrity, and
@@ -76,6 +80,8 @@ advanced features. It is often chosen for complex, enterprise-grade systems.
 - Slightly slower for simple read-heavy workloads
 - More complex configuration
 - Higher resource usage than MySQL
+
+---
 
 #### MongoDB
 
@@ -97,6 +103,8 @@ flexibility, and rapid development.
 - Higher memory usage
 - Eventual consistency in distributed setups
 
+---
+
 #### CouchDB
 
 CouchDB is an open-source document database that uses JSON for documents, HTTP/REST for access, and is designed for
@@ -116,6 +124,8 @@ offline-first and distributed systems.
 - Limited querying compared to MongoDB
 - Smaller community
 - Not ideal for complex analytics
+
+---
 
 ### Selected database: MongoDB
 
@@ -295,15 +305,14 @@ to the target date.
 ### API Endpoints
 
 - `GET /predict/{date}/{shopID}/{itemID}`: Returns the predicted stock level.
-- `PUT /upload`: Accepts a JSON list of `InventoryRecord` objects for bulk data ingestion.
+- `PUT /upload`: Accepts a JSON list of inventory records.
 
 ---
 
 ## Conclusion
 
-This PoC successfully demonstrates a deterministic approach to stock forecasting. By combining historical sales averages
-with context-aware triggers (holidays, events), the service provides actionable insights for retail inventory management
+This PoC demonstrates a deterministic approach to stock forecasting. By combining historical sales averages
+with context-aware triggers (holidays, events), the service provides insights for retail inventory management
 without the overhead of machine learning models. The choice of MongoDB ensures the system can handle the high-throughput
 requirements typical of retail data processing.
-
 
